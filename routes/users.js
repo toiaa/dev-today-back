@@ -1,39 +1,96 @@
 const express = require("express");
+const bcrypt = require("bcrypt");
+const { prisma } = require("../db");
 const router = express.Router();
-// all /users routes will be redirected to this file
-const users = [
-  { id: 1, name: "John" },
-  { id: 2, name: "Jane" },
-  { id: 3, name: "Jack" },
-  { id: 4, name: "Jill" },
-  { id: 5, name: "Joe" },
-  { id: 6, name: "Jenny" },
-];
 
-// the router object has the same methods as the app object
-router.get("/", (req, res) => {
-  res.send("get users");
-});
-// i delete the '/users' from the first parameter of the get function and leave the '/' because the app.use('/users', usersRouter); in server.js
+const saltRounds = 10;
+const saltRoundsRandom = bcrypt.genSaltSync(saltRounds);
 
-router.post("/", (req, res) => {
-  res.send("create user");
+router.get("/", async (req, res) => {
+  const users = await prisma.user.findMany();
+  res.json(users);
 });
 
-// dynamic route parameter
+router.post("/", async (req, res) => {
+  const requestBody = req.body;
+  if (!requestBody) res.status(400).send("No request body");
+  try {
+    const hashedPassword = bcrypt.hashSync(
+      requestBody.password,
+      saltRoundsRandom,
+    );
+    const newUser = await prisma.user.create({
+      data: {
+        name: requestBody.name,
+        email: requestBody.email.toLowerCase(),
+        password: hashedPassword,
+      },
+    });
+    console.log("newUser", newUser);
+    res.json(newUser);
+  } catch (error) {
+    console.error(error);
+    if (error.code === "P2002") {
+      console.error("Error", "Email already exists");
+    }
+    res.status(400).json({ message: "Error user already exists" });
+  }
+});
+
+router.post("/login", async (req, res) => {
+  const requestBody = req.body;
+  console.log("emailrequest", requestBody.email);
+  if (!requestBody) res.status(400).json({ message: "No request body" });
+  try {
+    const userFound = await prisma.user.findUnique({
+      where: {
+        email: requestBody.email,
+      },
+    });
+    if (!userFound) {
+      res.status(400).json({ message: "User not found" });
+    }
+    const isAuthenticated = bcrypt.compareSync(
+      requestBody.password,
+      userFound.password,
+    );
+    if (!isAuthenticated) {
+      res.status(400).json({ message: "Incorrect email or password" });
+    }
+    res.send("User logged in");
+  } catch (error) {
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+router.get("/delete-db-users", async (req, res) => {
+  const users = await prisma.user.findMany();
+  if (users.length === 0) {
+    res.send("No users to delete");
+  }
+  if (users) {
+    await prisma.user.deleteMany({});
+    res.send("Users deleted");
+  }
+});
+
 router
-  .route("/:id") // for defining our rounte only once to clean up the code, with different req types
-  .get((req, res) => {
+  .route("/:id")
+  .get(async (req, res) => {
+    const userFound = await prisma.user.findUnique({
+      where: {
+        id: parseInt(req.params.id),
+      },
+    });
     res.send(req.user.name);
   })
   .put((req, res) => {
-    res.send(`updating user with id: ${req.params.id}`);
+    // update user with id
   })
   .delete((req, res) => {
-    res.send(`deleting user with id: ${req.params.id}`);
+    // delete user with id
   });
 
-//param is a middleware, if you dont execute next() the request will hang and not go to the next middleware
 router.param("id", (req, res, next, id) => {
   req.user = users.find((user) => user.id === parseInt(id));
   next();
