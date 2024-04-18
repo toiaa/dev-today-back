@@ -21,9 +21,11 @@ app.get("/", (req: any, res: any) => {
   res.send("api '/', express running");
 });
 /* Routers */
+const authRouter = require("./routes/auth");
 const usersRouter = require("./routes/users");
 const postsRouter = require("./routes/posts");
 
+app.use("/auth", authRouter);
 app.use("/users", usersRouter);
 app.use("/posts", postsRouter);
 app.listen(port);
