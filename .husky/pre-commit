@@ -1,1 +1,1 @@
-npx lint-staged --config .eslintrc.json
+npx lint-staged 
