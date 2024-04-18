@@ -13,7 +13,7 @@ router.get("/", async (req, res) => {
 
 router.post("/", async (req, res) => {
   const requestBody = req.body;
-  if (!requestBody) res.status(400).send("No request body");
+  if (!requestBody) res.status(400).send("No body");
   try {
     const hashedPassword = bcrypt.hashSync(
       requestBody.password,
