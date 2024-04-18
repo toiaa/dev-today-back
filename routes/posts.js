@@ -6,6 +6,6 @@ router.get("/", (req, res) => {
   res.send("get posts");
 });
 
-/// checking
+// checking
 
 module.exports = router;
