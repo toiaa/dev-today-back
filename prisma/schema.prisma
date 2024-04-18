@@ -5,16 +5,16 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client-js" // this is the generator that creates the migrations, you can have more than one , like one for graph ql 
+  provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "postgresql" // name of db that u are using
-  url      = env("DATABASE_URL") // link to db
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
-  id       String  @id @unique @default(uuid()) //name , type , atributes, uuid's are random and unique
+  id       String  @id @unique @default(uuid())
   email    String  @unique
   password String
   name     String? // optional modifier
@@ -26,6 +26,6 @@ model Post {
   title     String
   content   String?
   createdAt DateTime @default(now())
-  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade) // relations , references the field inside te other table (foregin key) first parameter can be a string with a name
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   authorId  String
 }
