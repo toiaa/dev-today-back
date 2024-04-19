@@ -14,11 +14,17 @@ datasource db {
 }
 
 model User {
-  id       String  @id @unique @default(uuid())
-  email    String  @unique
-  password String
-  name     String? // optional modifier
-  posts    Post[] // multiple modifier
+  id         String       @id @unique @default(uuid())
+  email      String       @unique
+  password   String
+  username   String?
+  posts      Post[]
+  Journey    Journey?     @relation(fields: [journeyId], references: [id])
+  journeyId  String?
+  Ambition   Ambition[]
+  Technology Technology[]
+
+  @@index([email])
 }
 
 model Post {
@@ -28,4 +34,22 @@ model Post {
   createdAt DateTime @default(now())
   author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   authorId  String
+}
+
+model Journey {
+  id    String @id @default(uuid())
+  title String
+  user  User[]
+}
+
+model Ambition {
+  id    String @id @default(uuid())
+  title String
+  user  User[]
+}
+
+model Technology {
+  id    String @id @default(uuid())
+  title String
+  user  User[]
 }
