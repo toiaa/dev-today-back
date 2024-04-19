@@ -10,15 +10,35 @@ router.get("/", async (req, res) => {
   const users = await prisma.user.findMany();
   res.json(users);
 });
-
+router.get("/onboarding", async (req, res) => {
+  const requestBody = req.body;
+  if (!requestBody) return res.status(400).send("No body");
+  try {
+    const { journey, ambitions, technologies, id } = requestBody;
+    const user = await prisma.user.update({
+      where: {
+        id: id,
+      },
+      data: {
+        journey,
+        ambitions,
+        technologies,
+      },
+    });
+    return res.status(201).json(user);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
 router.get("/delete-db-users", async (req, res) => {
   const users = await prisma.user.findMany();
   if (users.length === 0) {
-    res.send("No users to delete");
+    return res.send("No users to delete");
   }
   if (users) {
     await prisma.user.deleteMany({});
-    res.send("Users deleted");
+    return res.send("Users deleted");
   }
 });
 

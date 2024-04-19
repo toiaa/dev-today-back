@@ -1,7 +1,7 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const app = express();
-const port = 3000;
+const port = 3005;
 
 app.use(bodyParser.json());
 
@@ -13,7 +13,6 @@ function logger(req: any, res: any, next: any) {
 }
 
 app.use(logger);
-
 app.get("/", (req: any, res: any) => {
   res.send("api '/', express running");
 });
