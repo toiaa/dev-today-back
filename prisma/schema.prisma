@@ -14,43 +14,84 @@ datasource db {
 }
 
 model User {
-  id                  String       @id @unique @default(uuid())
-  email               String       @unique
-  password            String
-  username            String?
-  posts               Post[]
+  id       String    @id @unique @default(uuid())
+  email    String    @unique
+  password String
+  username String
+  profile  Profile? // one to one relation (the user can have only one profile) - this references the profile model 
+  posts    Post[] // one to many relation (the user can have many posts) - this references the post model
+  comments Comment[]
+
+  @@index([email])
+}
+
+model Profile {
   onBoardingCompleted Boolean      @default(false)
   Journey             Journey?     @relation(fields: [journeyId], references: [id])
   journeyId           String?
   Ambition            Ambition[]
   Technology          Technology[]
-
-  @@index([email])
+  user                User         @relation(fields: [userId], references: [id]) // one to one relation (the profile can have only one user) -  this references the user model 
+  userId              String       @id // user id, this is the foreign key to the user, will match the user 
 }
 
 model Post {
-  id        Int      @id @default(autoincrement())
+  id        String    @id @default(uuid())
   title     String
+  type      String
   content   String?
+  createdAt DateTime  @default(now())
+  author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade) // one to many (the post can have only one user or author) - this references the user model
+  authorId  String
+  comments  Comment[] // one to many relation (the post can have many comments) - this references the comment model
+  tags      PostTag[]
+}
+
+//intermediary table to link posts to tags
+model PostTag {
+  postId String
+  post   Post   @relation(fields: [postId], references: [id])
+  tag    Tag    @relation(fields: [tagId], references: [id])
+  tagId  String
+
+  @@id([postId, tagId]) // compound id this represents the id of this relation (table that makes them many to many)
+}
+
+model Tag {
+  id   String    @id @default(uuid())
+  name String
+  post PostTag[] // explicit many to many relation (the tag can have many posts) - this references the post model
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  content   String
   createdAt DateTime @default(now())
   author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   authorId  String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade) // one to many relation (the comment can have only one post) - this references the post model
+  postId    String
 }
 
 model Journey {
   id    String @id @default(uuid())
   title String
-  user  User[]
+
+  Profile Profile[]
 }
 
 model Ambition {
   id    String @id @default(uuid())
   title String
-  user  User[]
+
+  Profile       Profile? @relation(fields: [profileUserId], references: [userId])
+  profileUserId String?
 }
 
 model Technology {
   id    String @id @default(uuid())
   title String
-  user  User[]
+
+  Profile       Profile? @relation(fields: [profileUserId], references: [userId])
+  profileUserId String?
 }
