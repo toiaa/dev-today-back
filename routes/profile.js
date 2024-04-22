@@ -7,11 +7,12 @@ router.get("/onboarding", async (req, res) => {
   if (!requestBody) return res.status(400).send("No body");
   try {
     const { journey, ambitions, technologies, id } = requestBody;
-    const updatedUser = await prisma.user.upsert({
+    const updatedUser = await prisma.profile.upsert({
       where: {
-        id,
+        userId: id,
       },
       create: {
+        onBoardingCompleted: true,
         journey,
         ambitions,
         technologies,

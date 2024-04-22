@@ -17,22 +17,23 @@ model User {
   id       String    @id @unique @default(uuid())
   email    String    @unique
   password String
-  username String
+  username String    @unique
   profile  Profile? // one to one relation (the user can have only one profile) - this references the profile model 
   posts    Post[] // one to many relation (the user can have many posts) - this references the post model
   comments Comment[]
+  Like     Like[]
 
   @@index([email])
 }
 
 model Profile {
-  onBoardingCompleted Boolean      @default(false)
-  Journey             Journey?     @relation(fields: [journeyId], references: [id])
+  onBoardingCompleted Boolean           @default(false)
+  user                User              @relation(fields: [userId], references: [id]) // one to one relation (the profile can have only one user) -  this references the user model 
+  userId              String            @id // user id, this is the foreign key to the user, will match the user 
+  journey             Journey?          @relation(fields: [journeyId], references: [id])
   journeyId           String?
-  Ambition            Ambition[]
-  Technology          Technology[]
-  user                User         @relation(fields: [userId], references: [id]) // one to one relation (the profile can have only one user) -  this references the user model 
-  userId              String       @id // user id, this is the foreign key to the user, will match the user 
+  ambitions           ProfileAmbition[]
+  tech                ProfileTech[]
 }
 
 model Post {
@@ -45,12 +46,22 @@ model Post {
   authorId  String
   comments  Comment[] // one to many relation (the post can have many comments) - this references the comment model
   tags      PostTag[]
+  likes     Like[]
+}
+
+model Like {
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId String
+  post     Post   @relation(fields: [postId], references: [id])
+  postId   String
+
+  @@id([authorId, postId])
 }
 
 //intermediary table to link posts to tags
 model PostTag {
-  postId String
   post   Post   @relation(fields: [postId], references: [id])
+  postId String
   tag    Tag    @relation(fields: [tagId], references: [id])
   tagId  String
 
@@ -74,24 +85,37 @@ model Comment {
 }
 
 model Journey {
-  id    String @id @default(uuid())
-  title String
-
+  id      String    @id @default(uuid())
+  title   String
   Profile Profile[]
 }
 
 model Ambition {
-  id    String @id @default(uuid())
-  title String
-
-  Profile       Profile? @relation(fields: [profileUserId], references: [userId])
-  profileUserId String?
+  id       String            @id @default(uuid())
+  title    String
+  profiles ProfileAmbition[]
 }
 
-model Technology {
-  id    String @id @default(uuid())
-  title String
+model ProfileAmbition {
+  ambition   Ambition @relation(fields: [ambitionId], references: [id])
+  ambitionId String
+  profile    Profile  @relation(fields: [profileId], references: [userId])
+  profileId  String
 
-  Profile       Profile? @relation(fields: [profileUserId], references: [userId])
-  profileUserId String?
+  @@id([profileId, ambitionId])
+}
+
+model Tech {
+  id       String        @id @default(uuid())
+  name     String
+  profiles ProfileTech[]
+}
+
+model ProfileTech {
+  tech      Tech    @relation(fields: [techId], references: [id])
+  techId    String
+  profile   Profile @relation(fields: [profileId], references: [userId])
+  profileId String
+
+  @@id([profileId, techId])
 }
