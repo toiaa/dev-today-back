@@ -58,4 +58,36 @@ router.post("/login", async (req, res) => {
   }
 });
 
+router.post("/find", async (req, res) => {
+  const requestBody = req.body;
+  if (!requestBody) return res.status(400).send("No body");
+  try {
+    const userFound = await prisma.user.findUnique({
+      where: {
+        email: requestBody.email,
+      },
+    });
+    res.status(200).json(userFound);
+  } catch (error) {
+    console.error(error);
+    res.status(200).json({ message: "User not found" });
+  }
+});
+
+router.post("/findbyid", async (req, res) => {
+  const requestBody = req.body;
+  if (!requestBody) return res.status(400).send("No body");
+  try {
+    const userFound = await prisma.user.findUnique({
+      where: {
+        id: requestBody.id,
+      },
+    });
+    res.status(200).json(userFound);
+  } catch (error) {
+    console.error(error);
+    res.status(200).json({ message: "User not found" });
+  }
+});
+
 module.exports = router;

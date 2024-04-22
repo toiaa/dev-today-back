@@ -15,17 +15,17 @@ router.get("/onboarding", async (req, res) => {
   if (!requestBody) return res.status(400).send("No body");
   try {
     const { journey, ambitions, technologies, id } = requestBody;
-    const user = await prisma.user.update({
+    const updatedUser = await prisma.user.upsert({
       where: {
-        id: id,
+        id,
       },
-      data: {
+      create: {
         journey,
         ambitions,
         technologies,
       },
     });
-    return res.status(201).json(user);
+    return res.status(201).json(updatedUser);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Internal server error" });
