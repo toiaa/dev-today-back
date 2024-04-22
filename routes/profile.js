@@ -25,17 +25,17 @@ router.get("/onboarding", async (req, res) => {
   }
 });
 
-router.get("/profile", async (req, res) => {
+router.get("/boarded", async (req, res) => {
   const requestBody = req.body;
   if (!requestBody) return res.status(400).send("No body");
   try {
     const { id } = requestBody;
-    const user = await prisma.user.findUnique({
+    const user = await prisma.profile.findUnique({
       where: {
-        id,
+        userId: id,
       },
       include: {
-        profile: true,
+        onBoardingCompleted: true,
       },
     });
     return res.status(200).json(user);
@@ -44,3 +44,5 @@ router.get("/profile", async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 });
+
+module.exports = router;
