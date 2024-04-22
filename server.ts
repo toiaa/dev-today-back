@@ -1,8 +1,14 @@
 const express = require("express");
 const bodyParser = require("body-parser");
+const cors = require("cors");
 const app = express();
 const port = 3005;
 
+const corsOptions = {
+  origin: "http://127.0.0.1:3005",
+};
+
+app.use(cors(corsOptions));
 app.use(bodyParser.json());
 
 app.use(bodyParser.urlencoded({ extended: false }));

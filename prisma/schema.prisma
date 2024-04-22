@@ -14,15 +14,16 @@ datasource db {
 }
 
 model User {
-  id         String       @id @unique @default(uuid())
-  email      String       @unique
-  password   String
-  username   String?
-  posts      Post[]
-  Journey    Journey?     @relation(fields: [journeyId], references: [id])
-  journeyId  String?
-  Ambition   Ambition[]
-  Technology Technology[]
+  id                  String       @id @unique @default(uuid())
+  email               String       @unique
+  password            String
+  username            String?
+  posts               Post[]
+  onBoardingCompleted Boolean      @default(false)
+  Journey             Journey?     @relation(fields: [journeyId], references: [id])
+  journeyId           String?
+  Ambition            Ambition[]
+  Technology          Technology[]
 
   @@index([email])
 }
