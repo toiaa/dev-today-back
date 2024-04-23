@@ -27,8 +27,19 @@ model User {
   Group     Group?      @relation(fields: [groupId], references: [id])
   groupId   String?
   GroupUser GroupUser[]
+  following Follow[]    @relation("follower")
+  followers Follow[]    @relation("following")
 
   @@index([email])
+}
+
+model Follow {
+  follower    User   @relation("follower", fields: [followerId], references: [id])
+  followerId  String
+  following   User   @relation("following", fields: [followingId], references: [id])
+  followingId String
+
+  @@id([followerId, followingId])
 }
 
 model Profile {
@@ -39,8 +50,6 @@ model Profile {
   journeyId           String?
   ambitions           ProfileAmbition[]
   tech                ProfileTech[]
-
-  @@index([userId])
 }
 
 model Post {
