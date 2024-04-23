@@ -24,7 +24,7 @@ model User {
   posts     Post[] // one to many relation (the user can have many posts) - this references the post model
   comments  Comment[]
   Like      Like[]
-  GroupUser GroupUser[]
+  groupUser GroupUser[]
   following Follow[]    @relation("follower")
   followers Follow[]    @relation("following")
 
@@ -107,13 +107,13 @@ model Comment {
 
 model Journey {
   id      String    @id @default(uuid())
-  title   String
-  Profile Profile[]
+  name    String
+  profile Profile[]
 }
 
 model Ambition {
   id       String            @id @default(uuid())
-  title    String
+  name     String
   profiles ProfileAmbition[]
 }
 

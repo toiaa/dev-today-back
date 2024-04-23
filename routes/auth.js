@@ -79,13 +79,13 @@ router.post("/user", async (req, res) => {
   }
 });
 
-router.post("/userbyid", async (req, res) => {
-  const requestBody = req.body;
-  if (!requestBody) return res.status(400).send("No body");
+router.get("/:id", async (req, res) => {
+  const id = req.params.id;
+  if (!id) return res.status(400).send("No user id");
   try {
     const userFound = await prisma.user.findUnique({
       where: {
-        id: requestBody.id,
+        id,
       },
       include: {
         profile: true,

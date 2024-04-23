@@ -28,8 +28,8 @@ const usersRouter = require("./routes/users");
 const postsRouter = require("./routes/posts");
 const profileRouter = require("./routes/profile");
 
-app.use("/auth", authRouter);
-app.use("/users", usersRouter);
-app.use("/profile", profileRouter);
-app.use("/posts", postsRouter);
+app.use("/api/auth", authRouter);
+app.use("/api/users", usersRouter);
+app.use("/api/profile", profileRouter);
+app.use("/api/posts", postsRouter);
 app.listen(port);
