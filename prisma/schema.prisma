@@ -39,6 +39,8 @@ model Profile {
   journeyId           String?
   ambitions           ProfileAmbition[]
   tech                ProfileTech[]
+
+  @@index([userId])
 }
 
 model Post {
