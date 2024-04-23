@@ -14,43 +14,161 @@ datasource db {
 }
 
 model User {
-  id                  String       @id @unique @default(uuid())
-  email               String       @unique
-  password            String
-  username            String?
-  posts               Post[]
-  onBoardingCompleted Boolean      @default(false)
-  Journey             Journey?     @relation(fields: [journeyId], references: [id])
-  journeyId           String?
-  Ambition            Ambition[]
-  Technology          Technology[]
+  id        String      @id @unique @default(uuid())
+  createdAt DateTime    @default(now())
+  email     String      @unique
+  password  String
+  username  String      @unique
+  image     String?
+  profile   Profile? // one to one relation (the user can have only one profile) - this references the profile model 
+  posts     Post[] // one to many relation (the user can have many posts) - this references the post model
+  comments  Comment[]
+  Like      Like[]
+  Group     Group?      @relation(fields: [groupId], references: [id])
+  groupId   String?
+  GroupUser GroupUser[]
+  following Follow[]    @relation("follower")
+  followers Follow[]    @relation("following")
 
   @@index([email])
 }
 
+model Follow {
+  follower    User   @relation("follower", fields: [followerId], references: [id])
+  followerId  String
+  following   User   @relation("following", fields: [followingId], references: [id])
+  followingId String
+
+  @@id([followerId, followingId])
+}
+
+model Profile {
+  onBoardingCompleted Boolean           @default(false)
+  user                User              @relation(fields: [userId], references: [id], onDelete: Cascade) // one to one relation (the profile can have only one user) -  this references the user model 
+  userId              String            @id // user id, this is the foreign key to the user, will match the user 
+  journey             Journey?          @relation(fields: [journeyId], references: [id], onDelete: Cascade)
+  journeyId           String?
+  ambitions           ProfileAmbition[]
+  tech                ProfileTech[]
+}
+
 model Post {
-  id        Int      @id @default(autoincrement())
+  id        String    @id @default(uuid())
+  author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade) // one to many (the post can have only one user or author) - this references the user model
+  authorId  String
   title     String
+  type      String    @default("STANDARD")
+  createdAt DateTime  @default(now())
+  meetDate  DateTime?
+  location  String?
   content   String?
+  audio     String?
+  image     String?
+  comments  Comment[] // one to many relation (the post can have many comments) - this references the comment model
+  tags      PostTag[]
+  likes     Like[]
+  views     Int       @default(0)
+  group     Group?    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId   String?
+}
+
+model Like {
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId String
+  post     Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId   String
+
+  @@id([authorId, postId])
+}
+
+//intermediary table to link posts to tags
+model PostTag {
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId String
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+  tagId  String
+
+  @@id([postId, tagId]) // compound id this represents the id of this relation (table that makes them many to many)
+}
+
+model Tag {
+  id   String    @id @default(uuid())
+  name String
+  post PostTag[] // explicit many to many relation (the tag can have many posts) - this references the post model
+}
+
+model Comment {
+  id        String   @id @default(uuid())
+  content   String
   createdAt DateTime @default(now())
   author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   authorId  String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade) // one to many relation (the comment can have only one post) - this references the post model
+  postId    String
 }
 
 model Journey {
-  id    String @id @default(uuid())
-  title String
-  user  User[]
+  id      String    @id @default(uuid())
+  title   String
+  Profile Profile[]
 }
 
 model Ambition {
-  id    String @id @default(uuid())
-  title String
-  user  User[]
+  id       String            @id @default(uuid())
+  title    String
+  profiles ProfileAmbition[]
 }
 
-model Technology {
-  id    String @id @default(uuid())
-  title String
-  user  User[]
+model ProfileAmbition {
+  ambition   Ambition @relation(fields: [ambitionId], references: [id], onDelete: Cascade)
+  ambitionId String
+  profile    Profile  @relation(fields: [profileId], references: [userId], onDelete: Cascade)
+  profileId  String
+
+  @@id([profileId, ambitionId])
+}
+
+model Tech {
+  id       String        @id @default(uuid())
+  name     String
+  profiles ProfileTech[]
+}
+
+model ProfileTech {
+  tech      Tech    @relation(fields: [techId], references: [id], onDelete: Cascade)
+  techId    String
+  profile   Profile @relation(fields: [profileId], references: [userId], onDelete: Cascade)
+  profileId String
+
+  @@id([profileId, techId])
+}
+
+model Group {
+  id           String      @id @default(uuid())
+  name         String
+  profileImage String
+  coverImage   String?
+  bio          String?
+  members      User[] // many to many relation (the group can have many users) - this references the user model
+  posts        Post[] // one to many relation (the group can have many posts) - this references the post model
+  createdAt    DateTime    @default(now())
+  GroupUser    GroupUser[]
+  active       Boolean     @default(true)
+}
+
+model GroupUser {
+  id        String  @id @default(uuid())
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  group     Group   @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId   String
+  isAdmin   Boolean @default(false)
+  active    Boolean @default(false)
+  isCreator Boolean @default(false)
+}
+
+enum PostType {
+  MEETUP
+  PODCAST
+  STANDARD
 }

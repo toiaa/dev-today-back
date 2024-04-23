@@ -26,8 +26,10 @@ app.get("/", (req: any, res: any) => {
 const authRouter = require("./routes/auth");
 const usersRouter = require("./routes/users");
 const postsRouter = require("./routes/posts");
+const profileRouter = require("./routes/profile");
 
 app.use("/auth", authRouter);
 app.use("/users", usersRouter);
+app.use("/profile", profileRouter);
 app.use("/posts", postsRouter);
 app.listen(port);

@@ -19,6 +19,11 @@ router.post("/register", async (req, res) => {
         username: requestBody.username,
         email: requestBody.email.toLowerCase(),
         password: hashedPassword,
+        profile: {
+          create: {
+            onBoardingCompleted: false,
+          },
+        },
       },
     });
     console.log("newUser", newUser);
@@ -58,7 +63,7 @@ router.post("/login", async (req, res) => {
   }
 });
 
-router.post("/find", async (req, res) => {
+router.post("/user", async (req, res) => {
   const requestBody = req.body;
   if (!requestBody) return res.status(400).send("No body");
   try {
@@ -74,13 +79,16 @@ router.post("/find", async (req, res) => {
   }
 });
 
-router.post("/findbyid", async (req, res) => {
+router.post("/userbyid", async (req, res) => {
   const requestBody = req.body;
   if (!requestBody) return res.status(400).send("No body");
   try {
     const userFound = await prisma.user.findUnique({
       where: {
         id: requestBody.id,
+      },
+      include: {
+        profile: true,
       },
     });
     res.status(200).json(userFound);
