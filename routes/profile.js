@@ -7,34 +7,20 @@ router.post("/onboarding", async (req, res) => {
   if (!requestBody) return res.status(400).send("No body");
   try {
     const { journey, ambitions, tech, id } = requestBody.data;
-    console.log(requestBody.data);
     if (!id || !journey || !ambitions || !tech)
       return res.status(400).send("Missing fields");
-    /*  const updatedUser = await prisma.profile.upsert({
+    const updatedProfile = await prisma.profile.update({
       where: {
         userId: id,
       },
-      journey: {
-        create: {
-          name: journey.name,
-        },
-      },
-      ambitions: {
-        create: ambitions,
-      },
-      tech: {
-        create: tech,
-      },
-      update: {
-        onBoardingDone: true,
-      },
-      include: {
-        journey: true,
-        ambitions: true,
-        tech: true,
+      data: {
+        onBoardingCompleted: true,
+        journey,
+        ambitions,
+        tech,
       },
     });
-    return res.status(201).json(updatedUser); */
+    return res.status(201).json(updatedProfile);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Internal server error" });
