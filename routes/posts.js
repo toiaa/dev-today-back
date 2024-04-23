@@ -2,7 +2,7 @@
 const express = require("express");
 const router = express.Router();
 
-router.get("/userPosts", async (req, res) => {
+router.get("/profile/posts", async (req, res) => {
   const requestBody = req.body;
   if (!requestBody) return res.status(400).send("No request body");
   try {

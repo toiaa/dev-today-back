@@ -24,8 +24,6 @@ model User {
   posts     Post[] // one to many relation (the user can have many posts) - this references the post model
   comments  Comment[]
   Like      Like[]
-  Group     Group?      @relation(fields: [groupId], references: [id])
-  groupId   String?
   GroupUser GroupUser[]
   following Follow[]    @relation("follower")
   followers Follow[]    @relation("following")
@@ -149,7 +147,6 @@ model Group {
   profileImage String
   coverImage   String?
   bio          String?
-  members      User[] // many to many relation (the group can have many users) - this references the user model
   posts        Post[] // one to many relation (the group can have many posts) - this references the post model
   createdAt    DateTime    @default(now())
   GroupUser    GroupUser[]

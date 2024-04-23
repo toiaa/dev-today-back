@@ -14,10 +14,12 @@ router.get("/onboarding", async (req, res) => {
         userId: id,
       },
       create: {
-        onBoardingDone: true,
         journey,
         ambitions,
         technologies,
+      },
+      update: {
+        onBoardingDone: true,
       },
     });
     return res.status(201).json(updatedUser);
@@ -35,9 +37,6 @@ router.get("/boarded", async (req, res) => {
     const user = await prisma.profile.findUnique({
       where: {
         userId: id,
-      },
-      include: {
-        onBoardingCompleted: true,
       },
     });
     return res.status(200).json(user);
