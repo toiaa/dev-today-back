@@ -4,7 +4,7 @@ const router = express.Router();
 
 router.get("/:id", async (req, res) => {
   const id = req.params.id;
-  if (!id) return res.status(400).send("No post id");
+  if (!id) return res.status(400).send("No post id provided");
   try {
     const posts = await prisma.post.findMany({
       where: {
@@ -24,10 +24,76 @@ router.get("/:id", async (req, res) => {
     return res.status(500).json({ message: "Internal server error" });
   }
 });
+router.post("/", async (req, res) => {
+  const requestBody = req.body;
+  if (!requestBody) return res.status(400).send("No request body");
+  const { title, content, authorid, tags } = requestBody;
+  if (!id) return res.status(400).send("No post id");
+  try {
+    const posts = await prisma.post.create({
+      data: {
+        title,
+        content,
+        authorid,
+        tags,
+      },
+    });
 
-router.get("/profile/:id", async (req, res) => {
+    return res.status(200).json(posts);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+router.patch("/:id", async (req, res) => {
   const id = req.params.id;
-  if (!id) return res.status(400).send("No profile id");
+  if (!id) return res.status(400).send("No post id provided");
+  const requestBody = req.body;
+  if (!requestBody) return res.status(400).send("No body");
+  const { title, content, tags } = requestBody;
+  try {
+    const posts = await prisma.post.update({
+      where: {
+        id,
+      },
+      data: {
+        title,
+        content,
+        tags,
+      },
+    });
+    if (posts.length === 0) {
+      return res.status(404).send("No posts found");
+    } else {
+      return res.status(200).json(posts);
+    }
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+router.delete("/:id", async (req, res) => {
+  const id = req.params.id;
+  if (!id) return res.status(400).send("No post id provided ");
+  try {
+    const posts = await prisma.post.delete({
+      where: {
+        id,
+      },
+    });
+
+    return res.status(200).json(posts);
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+router.get("/user/:id", async (req, res) => {
+  const id = req.params.id;
+  if (!id) return res.status(400).send("No user id");
   try {
     const posts = await prisma.post.findMany({
       where: {
@@ -38,7 +104,7 @@ router.get("/profile/:id", async (req, res) => {
       },
     });
     if (posts.length === 0) {
-      return res.status(404).send("No posts found");
+      return res.status(404).send("User has no posts");
     } else {
       return res.status(200).json(posts);
     }
