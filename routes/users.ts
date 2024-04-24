@@ -1,9 +1,9 @@
-const express = require("express");
+import { Router, Request, Response } from "express";
 const { prisma } = require("../db");
 const { StatusCodes } = require("http-status-codes");
 const router = express.Router();
 
-router.get("/", async (req, res) => {
+router.get("/", async (req: Request, res: Response) => {
   try {
     const users = await prisma.user.findMany({
       include: {
@@ -17,10 +17,9 @@ router.get("/", async (req, res) => {
       .status(StatusCodes.INTERNAL_SERVER_ERROR)
       .json({ message: "Internal server error" });
   }
-
-  res.json(users);
 });
-router.get("/delete-db-users", async (req, res) => {
+
+router.get("/delete-db-users", async (req: Request, res: Response) => {
   try {
     const users = await prisma.user.findMany();
     if (users.length === 0) {

@@ -1,4 +1,12 @@
 import z from "zod";
-import { userRegisterchema } from "../zodSchemas/authSchemas";
+import {
+  userRegisterchema,
+  userLoginSchema,
+  onBoardingSchema,
+} from "../zodSchemas/authSchemas";
+import { postSchema } from "../zodSchemas/postSchemas";
 
-type UserRegister = z.infer<typeof userRegisterchema>;
+type UserRegisterType = z.infer<typeof userRegisterchema>;
+type UserLoginType = z.infer<typeof userLoginSchema>;
+type OnBoardingType = z.infer<typeof onBoardingSchema>;
+type PostType = z.inder<typeof postSchema>;

@@ -1,9 +1,9 @@
-// code for individual routes for posts
-const express = require("express");
+import { Router, Request, Response } from "express";
+const { prisma } = require("../db");
 const { StatusCodes } = require("http-status-codes");
-const router = express.Router();
+const router = Router();
 
-router.get("/:id", async (req, res) => {
+router.get("/:id", async (req: Request, res: Response) => {
   const id = req.params.id;
   if (!id)
     return res.status(StatusCodes.BAD_REQUEST).send("No post id provided");
@@ -28,11 +28,11 @@ router.get("/:id", async (req, res) => {
       .json({ message: "Internal server error" });
   }
 });
-router.post("/", async (req, res) => {
+router.post("/", async (req: Request, res: Response) => {
   const requestBody = req.body;
   if (!requestBody)
     return res.status(StatusCodes.BAD_REQUEST).send("No request body");
-  const { title, content, authorid, tags } = requestBody;
+  const { title, content, authorid, tags, id } = requestBody;
   if (!id) return res.status(StatusCodes.BAD_REQUEST).send("No post id");
   try {
     const posts = await prisma.post.create({
@@ -53,7 +53,7 @@ router.post("/", async (req, res) => {
   }
 });
 
-router.patch("/:id", async (req, res) => {
+router.patch("/:id", async (req: Request, res: Response) => {
   const id = req.params.id;
   if (!id)
     return res.status(StatusCodes.BAD_REQUEST).send("No post id provided");
@@ -84,7 +84,7 @@ router.patch("/:id", async (req, res) => {
   }
 });
 
-router.delete("/:id", async (req, res) => {
+router.delete("/:id", async (req: Request, res: Response) => {
   const id = req.params.id;
   if (!id)
     return res.status(StatusCodes.BAD_REQUEST).send("No post id provided ");
@@ -104,7 +104,7 @@ router.delete("/:id", async (req, res) => {
   }
 });
 
-router.get("/user/:id", async (req, res) => {
+router.get("/user/:id", async (req: Request, res: Response) => {
   const id = req.params.id;
   if (!id) return res.status(StatusCodes.BAD_REQUEST).send("No user id");
   try {
