@@ -1,10 +1,12 @@
 // code for individual routes for posts
 const express = require("express");
+const { StatusCodes } = require("http-status-codes");
 const router = express.Router();
 
 router.get("/:id", async (req, res) => {
   const id = req.params.id;
-  if (!id) return res.status(400).send("No post id provided");
+  if (!id)
+    return res.status(StatusCodes.BAD_REQUEST).send("No post id provided");
   try {
     const posts = await prisma.post.findMany({
       where: {
@@ -17,18 +19,21 @@ router.get("/:id", async (req, res) => {
     if (posts.length === 0) {
       return res.status(404).send("No posts found");
     } else {
-      return res.status(200).json(posts);
+      return res.status(StatusCodes.OK).json(posts);
     }
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: "Internal server error" });
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ message: "Internal server error" });
   }
 });
 router.post("/", async (req, res) => {
   const requestBody = req.body;
-  if (!requestBody) return res.status(400).send("No request body");
+  if (!requestBody)
+    return res.status(StatusCodes.BAD_REQUEST).send("No request body");
   const { title, content, authorid, tags } = requestBody;
-  if (!id) return res.status(400).send("No post id");
+  if (!id) return res.status(StatusCodes.BAD_REQUEST).send("No post id");
   try {
     const posts = await prisma.post.create({
       data: {
@@ -39,18 +44,21 @@ router.post("/", async (req, res) => {
       },
     });
 
-    return res.status(200).json(posts);
+    return res.status(StatusCodes.OK).json(posts);
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: "Internal server error" });
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ message: "Internal server error" });
   }
 });
 
 router.patch("/:id", async (req, res) => {
   const id = req.params.id;
-  if (!id) return res.status(400).send("No post id provided");
+  if (!id)
+    return res.status(StatusCodes.BAD_REQUEST).send("No post id provided");
   const requestBody = req.body;
-  if (!requestBody) return res.status(400).send("No body");
+  if (!requestBody) return res.status(StatusCodes.BAD_REQUEST).send("No body");
   const { title, content, tags } = requestBody;
   try {
     const posts = await prisma.post.update({
@@ -66,17 +74,20 @@ router.patch("/:id", async (req, res) => {
     if (posts.length === 0) {
       return res.status(404).send("No posts found");
     } else {
-      return res.status(200).json(posts);
+      return res.status(StatusCodes.OK).json(posts);
     }
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: "Internal server error" });
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ message: "Internal server error" });
   }
 });
 
 router.delete("/:id", async (req, res) => {
   const id = req.params.id;
-  if (!id) return res.status(400).send("No post id provided ");
+  if (!id)
+    return res.status(StatusCodes.BAD_REQUEST).send("No post id provided ");
   try {
     const posts = await prisma.post.delete({
       where: {
@@ -84,16 +95,18 @@ router.delete("/:id", async (req, res) => {
       },
     });
 
-    return res.status(200).json(posts);
+    return res.status(StatusCodes.OK).json(posts);
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: "Internal server error" });
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ message: "Internal server error" });
   }
 });
 
 router.get("/user/:id", async (req, res) => {
   const id = req.params.id;
-  if (!id) return res.status(400).send("No user id");
+  if (!id) return res.status(StatusCodes.BAD_REQUEST).send("No user id");
   try {
     const posts = await prisma.post.findMany({
       where: {
@@ -104,13 +117,15 @@ router.get("/user/:id", async (req, res) => {
       },
     });
     if (posts.length === 0) {
-      return res.status(404).send("User has no posts");
+      return res.status(StatusCodes.NOT_FOUND).send("Not Found");
     } else {
-      return res.status(200).json(posts);
+      return res.status(StatusCodes.OK).json(posts);
     }
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: "Internal server error" });
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ message: "Internal server error" });
   }
 });
 

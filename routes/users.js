@@ -1,5 +1,6 @@
 const express = require("express");
 const { prisma } = require("../db");
+const { StatusCodes } = require("http-status-codes");
 const router = express.Router();
 
 router.get("/", async (req, res) => {
@@ -12,7 +13,9 @@ router.get("/", async (req, res) => {
     return res.json(users);
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: "Internal server error" });
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ message: "Internal server error" });
   }
 
   res.json(users);
@@ -29,7 +32,9 @@ router.get("/delete-db-users", async (req, res) => {
     }
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: "Internal server error" });
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ message: "Internal server error" });
   }
 });
 
