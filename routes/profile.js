@@ -2,8 +2,10 @@ const express = require("express");
 const { prisma } = require("../db");
 const { StatusCodes } = require("http-status-codes");
 const router = express.Router();
+const { validate } = require("../middlewares/authMiddleware.ts");
+const { onBoardingSchema } = require("../zodSchemas/authSchemas");
 
-router.post("/onboarding", async (req, res) => {
+router.post("/onboarding", validate(onBoardingSchema), async (req, res) => {
   const requestBody = req.body;
   if (!requestBody) return res.status(StatusCodes.BAD_REQUEST).send("No body");
   try {
