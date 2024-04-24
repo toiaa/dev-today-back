@@ -13,9 +13,10 @@ export function validate(schema: AnyZodObject) {
       next();
     } catch (error) {
       if (error instanceof ZodError) {
-        const errorMessages = error.errors.map((issue: any) => ({
-          message: `The ${issue.path[1]}: ${issue.message}`,
-        }));
+        const errorMessages = error.errors.map((issue: any) => {
+          const label = issue.path[0];
+          return { message: `${label}: ${issue.message}` };
+        });
         res
           .status(StatusCodes.BAD_REQUEST)
           .json({ error: "Invalid data", details: errorMessages });
