@@ -6,7 +6,7 @@ router.post("/onboarding", async (req, res) => {
   const requestBody = req.body;
   if (!requestBody) return res.status(400).send("No body");
   try {
-    const { journey, ambitions, tech, id } = requestBody.data;
+    const { journey, ambitions, tech, id } = requestBody;
     if (!id || !journey || !ambitions || !tech)
       return res.status(400).send("Missing fields");
     const updatedProfile = await prisma.profile.update({
