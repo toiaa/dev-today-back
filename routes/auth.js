@@ -37,8 +37,9 @@ router.post("/register", validate(userRegisterchema), async (req, res) => {
     console.error(error);
     if (error.code === "P2002") {
       console.error("Error", "Email already exists");
+      res.status(400).json({ message: "Error user already exists" });
     }
-    res.status(400).json({ message: "Error user already exists" });
+    res.status(500).json({ message: "Internal server error" });
   }
 });
 
@@ -53,7 +54,7 @@ router.post("/login", validate(userLoginSchema), async (req, res) => {
       },
     });
     if (!userFound) {
-      return res.status(400).json({ message: "User not found" });
+      return res.status(400).json(userFound);
     }
     const isAuthenticated = bcrypt.compareSync(
       requestBody.password,
@@ -62,7 +63,7 @@ router.post("/login", validate(userLoginSchema), async (req, res) => {
     if (!isAuthenticated) {
       return res.status(400).json({ message: "Incorrect email or password" });
     }
-    res.status(200).send("User logged in");
+    res.status(200).json(userFound);
   } catch (error) {
     res.status(500).json({ message: "Internal server error" });
   }
@@ -75,6 +76,9 @@ router.post("/user", async (req, res) => {
     const userFound = await prisma.user.findUnique({
       where: {
         email: requestBody.email,
+      },
+      include: {
+        profile: true,
       },
     });
     res.status(200).json(userFound);
