@@ -10,7 +10,6 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 app.use(bodyParser.json());
-
 app.use(bodyParser.urlencoded({ extended: false }));
 
 function logger(req: any, res: any, next: any) {
@@ -32,4 +31,15 @@ app.use("/api/auth", authRouter);
 app.use("/api/users", usersRouter);
 app.use("/api/profile", profileRouter);
 app.use("/api/posts", postsRouter);
-app.listen(port);
+
+const start = (): void => {
+  try {
+    app.listen(port, () => {
+      console.log(`Server is running on http://localhost:${port}`);
+    });
+  } catch (error) {
+    console.error(error);
+    process.exit(1);
+  }
+};
+start();
