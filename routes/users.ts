@@ -1,8 +1,9 @@
-const express = require("express");
+import { Router, Request, Response } from "express";
 const { prisma } = require("../db");
-const router = express.Router();
+const { StatusCodes } = require("http-status-codes");
+const router = Router();
 
-router.get("/", async (req, res) => {
+router.get("/", async (req: Request, res: Response) => {
   try {
     const users = await prisma.user.findMany({
       include: {
@@ -12,12 +13,13 @@ router.get("/", async (req, res) => {
     return res.json(users);
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: "Internal server error" });
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ message: "Internal server error" });
   }
-
-  res.json(users);
 });
-router.get("/delete-db-users", async (req, res) => {
+
+router.get("/delete-db-users", async (req: Request, res: Response) => {
   try {
     const users = await prisma.user.findMany();
     if (users.length === 0) {
@@ -29,7 +31,9 @@ router.get("/delete-db-users", async (req, res) => {
     }
   } catch (error) {
     console.error(error);
-    return res.status(500).json({ message: "Internal server error" });
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ message: "Internal server error" });
   }
 });
 
