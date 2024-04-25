@@ -1,7 +1,7 @@
 import { Router, Request, Response } from "express";
 const { prisma } = require("../db");
 const { StatusCodes } = require("http-status-codes");
-const router = express.Router();
+const router = Router();
 
 router.get("/", async (req: Request, res: Response) => {
   try {

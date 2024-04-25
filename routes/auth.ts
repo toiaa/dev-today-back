@@ -16,9 +16,6 @@ router.post(
   validate(userRegisterchema),
   async (req: Request, res: Response) => {
     const requestBody = req.body;
-    if (!requestBody)
-      return res.status(StatusCodes.BAD_REQUEST).send("No body");
-
     try {
       const hashedPassword = bcrypt.hashSync(
         requestBody.password,
@@ -36,13 +33,12 @@ router.post(
           },
         },
       });
-      console.log("newUser", newUser);
       res.status(StatusCodes.CREATED).json(newUser);
     } catch (error: any) {
       console.error(error);
       if (error.code === "P2002") {
         console.error("Error", "Email already exists");
-        res
+        return res
           .status(StatusCodes.BAD_REQUEST)
           .json({ message: "Error user already exists" });
       }
@@ -58,11 +54,7 @@ router.post(
   validate(userLoginSchema),
   async (req: Request, res: Response) => {
     const requestBody = req.body;
-    console.log("emailrequest", requestBody.email);
-    if (!requestBody)
-      return res
-        .status(StatusCodes.BAD_REQUEST)
-        .json({ message: "No request body" });
+
     try {
       const userFound = await prisma.user.findUnique({
         where: {
@@ -72,7 +64,7 @@ router.post(
       if (!userFound) {
         return res.status(StatusCodes.BAD_REQUEST).json(userFound);
       }
-      const isAuthenticated = bcrypt.compareSync(
+      const isAuthenticated = await bcrypt.compareSync(
         requestBody.password,
         userFound.password,
       );
@@ -90,7 +82,6 @@ router.post(
 
 router.post("/user", async (req: Request, res: Response) => {
   const requestBody = req.body;
-  if (!requestBody) return res.status(StatusCodes.BAD_REQUEST).send("No body");
   try {
     const userFound = await prisma.user.findUnique({
       where: {

@@ -11,8 +11,6 @@ router.post(
   validate(onBoardingSchema),
   async (req: Request, res: Response) => {
     const requestBody = req.body;
-    if (!requestBody)
-      return res.status(StatusCodes.BAD_REQUEST).send("No body");
     try {
       const { journey, ambitions, tech, id } = requestBody;
       if (!id || !journey || !ambitions || !tech)
