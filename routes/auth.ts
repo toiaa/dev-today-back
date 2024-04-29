@@ -3,7 +3,11 @@ import bcrypt from "bcrypt";
 import { prisma } from "../db";
 import { validate } from "../middlewares/authMiddleware";
 import { StatusCodes } from "http-status-codes";
-import { userRegisterchema, userLoginSchema } from "../zodSchemas/authSchemas";
+import {
+  userRegisterchema,
+  userLoginSchema,
+  idParameterSchema,
+} from "../zodSchemas/authSchemas";
 
 const router = Router();
 const saltRounds = 10;
@@ -52,7 +56,6 @@ router.post(
   validate(userLoginSchema),
   async (req: Request, res: Response) => {
     const requestBody = req.body;
-
     try {
       const userFound = await prisma.user.findUnique({
         where: {
@@ -71,9 +74,11 @@ router.post(
           .status(StatusCodes.BAD_REQUEST)
           .json({ message: "Incorrect email or password" });
       }
-      res.status(200).json(userFound);
+      res.status(StatusCodes.OK).json(userFound);
     } catch (error) {
-      res.status(500).json({ message: "Internal server error" });
+      res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .json({ message: "Internal server error" });
     }
   },
 );
@@ -96,23 +101,26 @@ router.post("/user", async (req: Request, res: Response) => {
   }
 });
 
-router.get("/:id", async (req: Request, res: Response) => {
-  const id = req.params.id;
-  if (!id) return res.status(StatusCodes.BAD_REQUEST).send("No user id");
-  try {
-    const userFound = await prisma.user.findUnique({
-      where: {
-        id,
-      },
-      include: {
-        profile: true,
-      },
-    });
-    res.status(200).json(userFound);
-  } catch (error) {
-    console.error(error);
-    res.status(StatusCodes.OK).json({ message: "User not found" });
-  }
-});
+router.get(
+  "/:id",
+  validate(idParameterSchema),
+  async (req: Request, res: Response) => {
+    const id = req.params.id;
+    try {
+      const userFound = await prisma.user.findUnique({
+        where: {
+          id,
+        },
+        include: {
+          profile: true,
+        },
+      });
+      res.status(StatusCodes.OK).json(userFound);
+    } catch (error) {
+      console.error(error);
+      res.status(StatusCodes.NOT_FOUND).json({ message: "User not found" });
+    }
+  },
+);
 
 export = router;
