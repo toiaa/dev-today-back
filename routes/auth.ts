@@ -1,15 +1,13 @@
 import { Router, Request, Response } from "express";
-const bcrypt = require("bcrypt");
-const { prisma } = require("../db");
+import bcrypt from "bcrypt";
+import { prisma } from "../db";
+import { validate } from "../middlewares/authMiddleware";
+import { StatusCodes } from "http-status-codes";
+import { userRegisterchema, userLoginSchema } from "../zodSchemas/authSchemas";
+
 const router = Router();
-const { validate } = require("../middlewares/authMiddleware.ts");
-const { StatusCodes } = require("http-status-codes");
 const saltRounds = 10;
 const saltRoundsRandom = bcrypt.genSaltSync(saltRounds);
-const {
-  userRegisterchema,
-  userLoginSchema,
-} = require("../zodSchemas/authSchemas");
 
 router.post(
   "/register",
@@ -117,4 +115,4 @@ router.get("/:id", async (req: Request, res: Response) => {
   }
 });
 
-module.exports = router;
+export = router;
