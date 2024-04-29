@@ -1,5 +1,5 @@
-import { Request, Response, NextFunction, query } from "express";
-import { AnyZodObject, z, ZodError } from "zod";
+import { Request, Response, NextFunction } from "express";
+import { AnyZodObject, ZodError } from "zod";
 import { StatusCodes } from "http-status-codes";
 
 export function validate(schema: AnyZodObject) {
