@@ -3,6 +3,10 @@ import cors from "cors";
 import express from "express";
 import dotenv from "dotenv";
 import logger from "./middlewares/logger";
+import authRouter from "./routes/auth";
+import usersRouter from "./routes/users";
+import postsRouter from "./routes/posts";
+import profileRouter from "./routes/profile";
 
 const app = express();
 dotenv.config();
@@ -18,11 +22,6 @@ app.use(logger);
 app.get("/", (req: Request, res: Response) => {
   res.send("<h1>api '/', express running</h1>");
 });
-
-const authRouter = require("./routes/auth");
-const usersRouter = require("./routes/users");
-const postsRouter = require("./routes/posts");
-const profileRouter = require("./routes/profile");
 
 app.use("/api/auth", authRouter);
 app.use("/api/users", usersRouter);
