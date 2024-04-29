@@ -1,6 +1,9 @@
 import { Router, Request, Response } from "express";
-const { prisma } = require("../db");
-const { StatusCodes } = require("http-status-codes");
+import { validate } from "../middlewares/authMiddleware";
+import { idParameterSchema } from "../zodSchemas/authSchemas";
+import { prisma } from "../db";
+import { StatusCodes } from "http-status-codes";
+
 const router = Router();
 
 router.get("/", async (req: Request, res: Response) => {
@@ -37,4 +40,34 @@ router.get("/delete-db-users", async (req: Request, res: Response) => {
   }
 });
 
-module.exports = router;
+router.delete(
+  "/:id",
+  validate(idParameterSchema),
+  async (req: Request, res: Response) => {
+    const id = req.params.id;
+    try {
+      const user = await prisma.user.delete({
+        where: {
+          id,
+        },
+      });
+
+      if (user) {
+        res.status(StatusCodes.OK).json({
+          msg: "User deleted",
+        });
+      } else {
+        res
+          .status(StatusCodes.BAD_REQUEST)
+          .json({ msg: `No member with id of ${req.params.id}` });
+      }
+    } catch (error) {
+      console.error(error);
+      res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .json({ message: "Internal server error" });
+    }
+  },
+);
+
+export = router;
