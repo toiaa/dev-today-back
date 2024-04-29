@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
-const { prisma } = require("../db");
-const { StatusCodes } = require("http-status-codes");
+import { prisma } from "../db";
+import { StatusCodes } from "http-status-codes";
 const router = Router();
 
 router.get("/:id", async (req: Request, res: Response) => {
@@ -28,54 +28,55 @@ router.get("/:id", async (req: Request, res: Response) => {
       .json({ message: "Internal server error" });
   }
 });
-router.post("/", async (req: Request, res: Response) => {
-  const requestBody = req.body;
-  const { title, content, authorid, tags } = requestBody;
-  if (!authorid) return res.status(StatusCodes.BAD_REQUEST).send("No user id");
-  try {
-    const posts = await prisma.post.create({
-      data: {
-        title,
-        content,
-        authorid,
-        tags,
-      },
-    });
 
-    return res.status(StatusCodes.OK).json(posts);
-  } catch (error) {
-    console.error(error);
-    return res
-      .status(StatusCodes.INTERNAL_SERVER_ERROR)
-      .json({ message: "Internal server error" });
-  }
-});
+// router.post("/", async (req: Request, res: Response) => {
+//   const requestBody = req.body;
+//   const { title, content, authorid, tags } = requestBody;
+//   if (!authorid) return res.status(StatusCodes.BAD_REQUEST).send("No user id");
+//   try {
+//     const posts = await prisma.post.create({
+//       data: {
+//         title,
+//         content,
+//         authorId,
+//         tags,
+//       },
+//     });
 
-router.patch("/:id", async (req: Request, res: Response) => {
-  const id = req.params.id;
-  if (!id)
-    return res.status(StatusCodes.BAD_REQUEST).send("No post id provided");
-  const requestBody = req.body;
-  const { title, content, tags } = requestBody;
-  try {
-    const posts = await prisma.post.update({
-      where: {
-        id,
-      },
-      data: {
-        title,
-        content,
-        tags,
-      },
-    });
-    if (posts.length === 0) return res.status(StatusCodes.OK).json(posts);
-  } catch (error) {
-    console.error(error);
-    return res
-      .status(StatusCodes.INTERNAL_SERVER_ERROR)
-      .json({ message: "Internal server error" });
-  }
-});
+//     return res.status(StatusCodes.OK).json(posts);
+//   } catch (error) {
+//     console.error(error);
+//     return res
+//       .status(StatusCodes.INTERNAL_SERVER_ERROR)
+//       .json({ message: "Internal server error" });
+//   }
+// });
+
+// router.patch("/:id", async (req: Request, res: Response) => {
+//   const id = req.params.id;
+//   if (!id)
+//     return res.status(StatusCodes.BAD_REQUEST).send("No post id provided");
+//   const requestBody = req.body;
+//   const { title, content, tags } = requestBody;
+//   try {
+//     const posts = await prisma.post.update({
+//       where: {
+//         id,
+//       },
+//       data: {
+//         title,
+//         content,
+//         tags,
+//       },
+//     });
+//     if (posts.length === 0) return res.status(StatusCodes.OK).json(posts);
+//   } catch (error) {
+//     console.error(error);
+//     return res
+//       .status(StatusCodes.INTERNAL_SERVER_ERROR)
+//       .json({ message: "Internal server error" });
+//   }
+// });
 
 router.delete("/:id", async (req: Request, res: Response) => {
   const id = req.params.id;
@@ -103,7 +104,7 @@ router.get("api/user/:userId/post/", async (req: Request, res: Response) => {
   try {
     const postsFound = await prisma.post.findMany({
       where: {
-        authorid: userId,
+        authorId: userId,
       },
       include: {
         tags: true,
@@ -123,4 +124,4 @@ router.get("api/user/:userId/post/", async (req: Request, res: Response) => {
   }
 });
 
-module.exports = router;
+export = router;
