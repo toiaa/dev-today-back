@@ -1,10 +1,11 @@
 import { Router, Request, Response } from "express";
 
-const { prisma } = require("../db");
-const { StatusCodes } = require("http-status-codes");
+import { prisma } from "../db";
+import { StatusCodes } from "http-status-codes";
+import { validate } from "../middlewares/authMiddleware";
+import { onBoardingSchema } from "../zodSchemas/authSchemas";
+
 const router = Router();
-const { validate } = require("../middlewares/authMiddleware.ts");
-const { onBoardingSchema } = require("../zodSchemas/authSchemas");
 
 router.post(
   "/onboarding",
@@ -54,4 +55,32 @@ router.get("/onboarding/:id", async (req: Request, res: Response) => {
   }
 });
 
-module.exports = router;
+router.put("/onboarding/:id", async (req: Request, res: Response) => {
+  const id = req.params.id;
+  if (!id) return res.status(StatusCodes.BAD_REQUEST).send("No user id");
+  const requestBody = req.body;
+  try {
+    const { journey, ambitions, tech } = requestBody;
+    if (!journey || !ambitions || !tech)
+      return res.status(StatusCodes.BAD_REQUEST).send("Missing fields");
+    const modifyUserOnboarding = await prisma.profile.update({
+      where: {
+        userId: id,
+      },
+      data: {
+        journey,
+        ambitions,
+        tech,
+      },
+    });
+
+    return res.status(StatusCodes.OK).json(modifyUserOnboarding);
+  } catch (error) {
+    console.error(error);
+    res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ message: "Internal server error" });
+  }
+});
+
+export = router;
