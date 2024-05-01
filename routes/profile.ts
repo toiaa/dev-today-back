@@ -89,4 +89,4 @@ router.put(
   },
 );
 
-export = router;
+export default router;
