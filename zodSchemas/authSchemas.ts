@@ -1,5 +1,5 @@
 import { z } from "zod";
-export const userRegisterchema = z.object({
+export const userRegisterSchema = z.object({
   body: z
     .object({
       username: z

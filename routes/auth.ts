@@ -4,7 +4,7 @@ import { prisma } from "../db";
 import { validate } from "../middlewares/authMiddleware";
 import { StatusCodes } from "http-status-codes";
 import {
-  userRegisterchema,
+  userRegisterSchema,
   userLoginSchema,
   idParameterSchema,
 } from "../zodSchemas/authSchemas";
@@ -15,7 +15,7 @@ const saltRoundsRandom = bcrypt.genSaltSync(saltRounds);
 
 router.post(
   "/register",
-  validate(userRegisterchema),
+  validate(userRegisterSchema),
   async (req: Request, res: Response) => {
     const requestBody = req.body;
     try {
