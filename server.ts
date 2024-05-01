@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
 import cors from "cors";
 import express from "express";
-import dotenv from "dotenv";
 import logger from "./middlewares/logger";
 import authRouter from "./routes/auth";
 import usersRouter from "./routes/users";
@@ -9,7 +8,6 @@ import postsRouter from "./routes/posts";
 import profileRouter from "./routes/profile";
 
 const app = express();
-dotenv.config();
 const corsOptions = {
   origin: "http://localhost:3000",
 };
