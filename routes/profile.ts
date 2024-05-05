@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 
-import { prisma } from "../db";
+import { prisma } from "../lib/prisma";
 import { StatusCodes } from "http-status-codes";
 import { validate } from "../middlewares/authMiddleware";
 import { idParameterSchema, onBoardingSchema } from "../zodSchemas/authSchemas";
@@ -11,9 +11,8 @@ router.post(
   "/onboarding",
   validate(onBoardingSchema),
   async (req: Request, res: Response) => {
-    const requestBody = req.body;
     try {
-      const { journey, ambitions, tech, id } = requestBody;
+      const { journey, ambitions, tech, id } = req.body;
       if (!id || !journey || !ambitions || !tech)
         return res.status(StatusCodes.BAD_REQUEST).send("Missing fields");
       const updatedProfile = await prisma.profile.update({
@@ -37,8 +36,9 @@ router.post(
   },
 );
 
+//return user profile including onboarding data:journey/ambitons/tech
 router.get(
-  "/onboarding/:id",
+  "/:id",
   validate(idParameterSchema),
   async (req: Request, res: Response) => {
     const id = req.params.id;
@@ -58,14 +58,14 @@ router.get(
   },
 );
 
-router.put(
+//edit onboarding information on a user profile
+router.patch(
   "/onboarding/:id",
   validate(idParameterSchema),
   async (req: Request, res: Response) => {
     const id = req.params.id;
-    const requestBody = req.body;
     try {
-      const { journey, ambitions, tech } = requestBody;
+      const { journey, ambitions, tech } = req.body;
       if (!journey || !ambitions || !tech)
         return res.status(StatusCodes.BAD_REQUEST).send("Missing fields");
       const modifyUserOnboarding = await prisma.profile.update({
