@@ -55,18 +55,17 @@ router.post(
   "/login",
   validate(userLoginSchema),
   async (req: Request, res: Response) => {
-    const requestBody = req.body;
     try {
       const userFound = await prisma.user.findUnique({
         where: {
-          email: requestBody.email,
+          email: req.body.email,
         },
       });
       if (!userFound) {
         return res.status(StatusCodes.BAD_REQUEST).json(userFound);
       }
       const isAuthenticated = await bcrypt.compareSync(
-        requestBody.password,
+        req.body.password,
         userFound.password,
       );
       if (!isAuthenticated) {
@@ -84,11 +83,10 @@ router.post(
 );
 
 router.post("/user", async (req: Request, res: Response) => {
-  const requestBody = req.body;
   try {
     const userFound = await prisma.user.findUnique({
       where: {
-        email: requestBody.email,
+        email: req.body.email,
       },
       include: {
         profile: true,
