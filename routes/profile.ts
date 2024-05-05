@@ -3,10 +3,12 @@ import { Router, Request, Response } from "express";
 import { prisma } from "../lib/prisma";
 import { StatusCodes } from "http-status-codes";
 import { validate } from "../middlewares/authMiddleware";
-import { idParameterSchema, onBoardingSchema } from "../zodSchemas/authSchemas";
+import { onBoardingSchema } from "../zodSchemas/authSchemas";
+import { idParameterSchema } from "../zodSchemas/postSchemas";
 
 const router = Router();
 
+//update user with onboarding information
 router.post(
   "/onboarding",
   validate(onBoardingSchema),
@@ -27,28 +29,6 @@ router.post(
         },
       });
       return res.status(StatusCodes.CREATED).json(updatedProfile);
-    } catch (error) {
-      console.error(error);
-      res
-        .status(StatusCodes.INTERNAL_SERVER_ERROR)
-        .json({ message: "Internal server error" });
-    }
-  },
-);
-
-//return user profile including onboarding data:journey/ambitons/tech
-router.get(
-  "/:id",
-  validate(idParameterSchema),
-  async (req: Request, res: Response) => {
-    const id = req.params.id;
-    try {
-      const user = await prisma.profile.findUnique({
-        where: {
-          userId: id,
-        },
-      });
-      return res.status(StatusCodes.OK).json(user);
     } catch (error) {
       console.error(error);
       res
@@ -80,6 +60,28 @@ router.patch(
       });
 
       return res.status(StatusCodes.OK).json(modifyUserOnboarding);
+    } catch (error) {
+      console.error(error);
+      res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .json({ message: "Internal server error" });
+    }
+  },
+);
+
+//return user profile including onboarding data:journey/ambitons/tech
+router.get(
+  "/:id",
+  validate(idParameterSchema),
+  async (req: Request, res: Response) => {
+    const id = req.params.id;
+    try {
+      const user = await prisma.profile.findUnique({
+        where: {
+          userId: id,
+        },
+      });
+      return res.status(StatusCodes.OK).json(user);
     } catch (error) {
       console.error(error);
       res
