@@ -58,3 +58,8 @@ export const idParameterSchema = z.object({
     })
     .required(),
 });
+
+export const queryParamsSchema = z.object({
+  postType: z.string().optional(),
+  page: z.string().optional(),
+});
