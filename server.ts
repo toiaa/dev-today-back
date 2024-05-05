@@ -3,8 +3,8 @@ import cors from "cors";
 import express from "express";
 import logger from "./middlewares/logger";
 import authRouter from "./routes/auth";
-import usersRouter from "./routes/users";
-import postsRouter from "./routes/posts";
+import userRouter from "./routes/user";
+import postRouter from "./routes/post";
 import profileRouter from "./routes/profile";
 
 const app = express();
@@ -22,9 +22,9 @@ app.get("/", (req: Request, res: Response) => {
 });
 
 app.use("/api/auth", authRouter);
-app.use("/api/users", usersRouter);
+app.use("/api/user", userRouter);
 app.use("/api/profile", profileRouter);
-app.use("/api/posts", postsRouter);
+app.use("/api/post", postRouter);
 
 const start = (): void => {
   try {
