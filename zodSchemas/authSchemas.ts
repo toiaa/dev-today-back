@@ -49,16 +49,6 @@ export const onBoardingSchema = z.object({
     .required(),
 });
 
-export const idParameterSchema = z.object({
-  params: z
-    .object({
-      id: z.string({ required_error: "is required" }).length(36, {
-        message: "Not a valid ID",
-      }),
-    })
-    .required(),
-});
-
 export const queryParamsSchema = z.object({
   postType: z.string().optional(),
   page: z.string().optional(),
