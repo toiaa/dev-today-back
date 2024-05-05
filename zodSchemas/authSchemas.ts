@@ -63,3 +63,7 @@ export const queryParamsSchema = z.object({
   postType: z.string().optional(),
   page: z.string().optional(),
 });
+
+export const followSchema = z.object({
+  followid: z.string(),
+});
