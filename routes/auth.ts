@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import bcrypt from "bcrypt";
-import { prisma } from "../db";
+import { prisma } from "../lib/prisma";
 import { validate } from "../middlewares/authMiddleware";
 import { StatusCodes } from "http-status-codes";
 import {
@@ -13,20 +13,20 @@ const router = Router();
 const saltRounds = 10;
 const saltRoundsRandom = bcrypt.genSaltSync(saltRounds);
 
+//register a new user
 router.post(
   "/register",
   validate(userRegisterSchema),
   async (req: Request, res: Response) => {
-    const requestBody = req.body;
     try {
       const hashedPassword = bcrypt.hashSync(
-        requestBody.password,
+        req.body.password,
         saltRoundsRandom,
       );
       const newUser = await prisma.user.create({
         data: {
-          username: requestBody.username,
-          email: requestBody.email.toLowerCase(),
+          username: req.body.username,
+          email: req.body.email.toLowerCase(),
           password: hashedPassword,
           profile: {
             create: {
