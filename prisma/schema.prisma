@@ -23,21 +23,12 @@ model User {
   profile   Profile?
   posts     Post[] // one to many relation (the user can have many posts) - this references the post model
   comments  Comment[]
-  Like      Like[]
+  likes      Like[]
   groupUser GroupUser[]
   following Follow[]    @relation("follower")
   followers Follow[]    @relation("following")
 
   @@index([email])
-}
-
-model Follow {
-  follower    User   @relation("follower", fields: [followerId], references: [id])
-  followerId  String
-  following   User   @relation("following", fields: [followingId], references: [id])
-  followingId String
-
-  @@id([followerId, followingId])
 }
 
 model Profile {
@@ -49,12 +40,22 @@ model Profile {
   tech                String[]
 }
 
+model Follow {
+  follower    User   @relation("follower", fields: [followerId], references: [id])
+  followerId  String
+  following   User   @relation("following", fields: [followingId], references: [id])
+  followingId String
+
+  @@id([followerId, followingId])
+}
+
+
 model Post {
   id        String    @id @default(uuid())
   author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade) // one to many (the post can have only one user or author) - this references the user model
   authorId  String
   title     String
-  type      String    @default("STANDARD")
+  type      PostType    @default(STANDARD)
   createdAt DateTime  @default(now())
   meetDate  DateTime?
   location  String?
@@ -104,7 +105,7 @@ model Group {
   bio          String?
   posts        Post[] // one to many relation (the group can have many posts) - this references the post model
   createdAt    DateTime    @default(now())
-  GroupUser    GroupUser[]
+  groupUser    GroupUser[]
   active       Boolean     @default(true)
 }
 
