@@ -20,10 +20,10 @@ model User {
   password  String
   username  String      @unique
   image     String?
-  profile   Profile?
+  profile    Profile?
   posts     Post[] // one to many relation (the user can have many posts) - this references the post model
   comments  Comment[]
-  likes      Like[]
+  likes     Like[]
   groupUser GroupUser[]
   following Follow[]    @relation("follower")
   followers Follow[]    @relation("following")
@@ -49,13 +49,12 @@ model Follow {
   @@id([followerId, followingId])
 }
 
-
 model Post {
   id        String    @id @default(uuid())
   author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade) // one to many (the post can have only one user or author) - this references the user model
   authorId  String
   title     String
-  type      PostType    @default(STANDARD)
+  type      PostType  @default(STANDARD)
   createdAt DateTime  @default(now())
   meetDate  DateTime?
   location  String?
@@ -100,7 +99,7 @@ model Comment {
 model Group {
   id           String      @id @default(uuid())
   name         String
-  profileImage String
+  profileImage  String
   coverImage   String?
   bio          String?
   posts        Post[] // one to many relation (the group can have many posts) - this references the post model
