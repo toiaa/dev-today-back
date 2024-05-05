@@ -13,7 +13,7 @@ export function validate(schema: AnyZodObject) {
       next();
     } catch (error) {
       if (error instanceof ZodError) {
-        const errorMessages = error.errors.map((issue: any) => {
+        const errorMessages = error.errors.map((issue) => {
           const label = issue.path.length > 1 ? issue.path[1] : issue.path[0];
           return { message: `${label}: ${issue.message}` };
         });
