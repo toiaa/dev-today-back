@@ -68,7 +68,11 @@ router.get(
   validate(queryParamsSchema),
   async (req: Request, res: Response) => {
     const id = req.params.id;
-    const type = (req.query.postType as string).toUpperCase();
+    const type =
+      typeof req.query.postType === "string"
+        ? req.query.postType.toUpperCase()
+        : undefined;
+
     const page = parseInt(req.query.page as string) || 1;
     const pageSize = 3; // Number of posts per page
     try {
@@ -109,14 +113,39 @@ router.post(
   "/:id/follow",
   validate(idParameterSchema),
   async (req: Request, res: Response) => {
-    const id = req.params.id;
+    const followerId = req.params.id;
+    const followingId = req.query.followid as string;
     try {
-      const user = await prisma.user.findUnique({
+      // Check if the user is trying to follow themselves
+      if (followerId === followingId) {
+        return res
+          .status(StatusCodes.BAD_REQUEST)
+          .json({ message: "You cannot follow yourself" });
+      }
+
+      // Check if the follow relation already exists
+      const existingFollow = await prisma.follow.findFirst({
         where: {
-          id,
+          followerId,
+          followingId,
         },
       });
-      return res.status(StatusCodes.OK).json(user);
+
+      if (existingFollow) {
+        return res
+          .status(StatusCodes.BAD_REQUEST)
+          .json({ message: "You are already following this user" });
+      }
+
+      // Create a new follow relation
+      const newFollow = await prisma.follow.create({
+        data: {
+          follower: { connect: { id: followerId } },
+          following: { connect: { id: followingId } },
+        },
+      });
+
+      return res.status(StatusCodes.OK).json(newFollow);
     } catch (error) {
       console.error(error);
       res
