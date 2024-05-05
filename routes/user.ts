@@ -1,9 +1,7 @@
 import { Router, Request, Response } from "express";
 import { validate } from "../middlewares/authMiddleware";
-import {
-  idParameterSchema,
-  queryParamsSchema,
-} from "../zodSchemas/authSchemas";
+import { queryParamsSchema } from "../zodSchemas/authSchemas";
+import { idParameterSchema } from "../zodSchemas/postSchemas";
 import { prisma } from "../lib/prisma";
 import { StatusCodes } from "http-status-codes";
 import { PostType } from "../types";
@@ -74,7 +72,7 @@ router.get(
         : undefined;
 
     const page = parseInt(req.query.page as string) || 1;
-    const pageSize = 3; // Number of posts per page
+    const pageSize = 5; // Number of posts per page
     try {
       let userPosts;
       const skip = (page - 1) * pageSize;
