@@ -59,7 +59,7 @@ router.get(
   },
 );
 
-//get posts of a specific user by postType and pagination
+//get all posts of a specific user, filter by postType, with pagination
 router.get(
   "/:id/posts",
   validate(idParameterSchema),
