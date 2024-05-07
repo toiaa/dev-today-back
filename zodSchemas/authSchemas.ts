@@ -1,34 +1,22 @@
 import { z } from "zod";
+
+export const authSchema = z.object({
+  username: z
+    .string({ required_error: "is required" })
+    .min(4, { message: "must be at least 4 characters long." })
+    .max(20),
+  email: z.string({ required_error: "is required" }).email("must be valid"),
+  password: z
+    .string({ required_error: "is required" })
+    .min(8, { message: "must be at least 8 characters long." }),
+});
+
 export const userRegisterSchema = z.object({
-  body: z
-    .object({
-      username: z
-        .string()
-        .min(4, { message: "must be at least 4 characters long." })
-        .max(20),
-      email: z.string({ required_error: "is required" }).email("must be valid"),
-      password: z
-        .string()
-        .min(8, { message: "must be at least 8 characters long." })
-        .max(10),
-    })
-    .required(),
+  body: authSchema.required(),
 });
 
 export const userLoginSchema = z.object({
-  body: z
-    .object({
-      email: z
-        .string({ required_error: "is required" })
-        .min(4, {
-          message: "must be at least 4 characters",
-        })
-        .email("must be valid"),
-      password: z
-        .string({ required_error: "is required" })
-        .min(8, { message: "must be at least 8 characters long." }),
-    })
-    .required(),
+  body: authSchema.omit({ username: true }).required(),
 });
 
 export const onBoardingSchema = z.object({
@@ -45,6 +33,9 @@ export const onBoardingSchema = z.object({
         .string()
         .array()
         .nonempty({ message: "must choose at least one" }),
+      id: z.string({ required_error: "is required" }).length(36, {
+        message: "Not a valid ID",
+      }),
     })
     .required(),
 });
