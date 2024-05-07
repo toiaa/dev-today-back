@@ -3,7 +3,11 @@ import bcrypt from "bcrypt";
 import { prisma } from "../lib/prisma";
 import { validate } from "../middlewares/authMiddleware";
 import { StatusCodes } from "http-status-codes";
-import { userRegisterSchema, userLoginSchema } from "../zodSchemas/authSchemas";
+import {
+  userRegisterSchema,
+  userLoginSchema,
+  emailSchema,
+} from "../zodSchemas/authSchemas";
 
 const router = Router();
 const saltRounds = 10;
@@ -77,6 +81,27 @@ router.post(
       res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
         .json({ message: "Internal server error" });
+    }
+  },
+);
+
+router.post(
+  "/user",
+  validate(emailSchema),
+  async (req: Request, res: Response) => {
+    try {
+      const userFound = await prisma.user.findUnique({
+        where: {
+          email: req.body.email,
+        },
+        include: {
+          profile: true,
+        },
+      });
+      res.status(StatusCodes.OK).json(userFound);
+    } catch (error) {
+      console.error(error);
+      res.status(StatusCodes.OK).json({ message: "User not found" });
     }
   },
 );
