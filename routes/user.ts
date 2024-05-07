@@ -8,7 +8,7 @@ import { PostType } from "../types";
 
 const router = Router();
 
-//return all users in the database
+//return all users with their profile from the database
 router.get("/", async (req: Request, res: Response) => {
   try {
     const users = await prisma.user.findMany({
@@ -44,8 +44,7 @@ router.get(
             orderBy: {
               createdAt: "desc", // Order posts by createdAt in descending order
             },
-            distinct: ["type"], // Return only one post per category
-            take: 3, // Take only the latest post for each category
+            take: 3, // Take only the latest three posts
           },
         },
       });
