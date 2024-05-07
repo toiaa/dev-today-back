@@ -19,6 +19,10 @@ export const userLoginSchema = z.object({
   body: authSchema.omit({ username: true }).required(),
 });
 
+export const emailSchema = z.object({
+  body: authSchema.pick({ email: true }),
+});
+
 export const onBoardingSchema = z.object({
   body: z
     .object({
