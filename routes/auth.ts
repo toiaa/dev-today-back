@@ -1,13 +1,14 @@
-import { Router, Request, Response } from "express";
+import { Router, Response } from "express";
 import bcrypt from "bcrypt";
 import { prisma } from "../lib/prisma";
-import { validate } from "../middlewares/authMiddleware";
+import { validateBody } from "../middlewares/middleware";
 import { StatusCodes } from "http-status-codes";
 import {
-  userRegisterSchema,
-  userLoginSchema,
   emailSchema,
-} from "../zodSchemas/authSchemas";
+  userLoginSchema,
+  userRegisterSchema,
+} from "../lib/validations";
+import { TypedRequestBody } from "zod-express-middleware";
 
 const router = Router();
 const saltRounds = 10;
@@ -16,8 +17,8 @@ const saltRoundsRandom = bcrypt.genSaltSync(saltRounds);
 //register a new user
 router.post(
   "/register",
-  validate(userRegisterSchema),
-  async (req: Request, res: Response) => {
+  validateBody(userRegisterSchema),
+  async (req: TypedRequestBody<typeof userRegisterSchema>, res: Response) => {
     try {
       const hashedPassword = bcrypt.hashSync(
         req.body.password,
@@ -54,8 +55,8 @@ router.post(
 //login with email address and password
 router.post(
   "/login",
-  validate(userLoginSchema),
-  async (req: Request, res: Response) => {
+  validateBody(userLoginSchema),
+  async (req: TypedRequestBody<typeof userLoginSchema>, res: Response) => {
     try {
       const userFound = await prisma.user.findUnique({
         where: {
@@ -87,8 +88,8 @@ router.post(
 
 router.post(
   "/user",
-  validate(emailSchema),
-  async (req: Request, res: Response) => {
+  validateBody(emailSchema),
+  async (req: TypedRequestBody<typeof emailSchema>, res: Response) => {
     try {
       const userFound = await prisma.user.findUnique({
         where: {
