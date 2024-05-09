@@ -1,10 +1,11 @@
 import { Router, Request, Response } from "express";
-import { validate } from "../middlewares/authMiddleware";
-import { queryParamsSchema } from "../zodSchemas/authSchemas";
-import { idParameterSchema } from "../zodSchemas/postSchemas";
+import { validateParams, validateQuery } from "../middlewares/middleware";
+import { followSchema, idSchema, userPostsQuery } from "../lib/validations";
 import { prisma } from "../lib/prisma";
 import { StatusCodes } from "http-status-codes";
-import { PostType } from "../types";
+import { PostType } from "@prisma/client";
+import { TypedRequest, TypedRequestParams } from "zod-express-middleware";
+import { ZodAny } from "zod";
 
 const router = Router();
 
@@ -28,8 +29,8 @@ router.get("/", async (req: Request, res: Response) => {
 //return individual user with profile/following/followers and latest single post in each post type.
 router.get(
   "/:id",
-  validate(idParameterSchema),
-  async (req: Request, res: Response) => {
+  validateParams(idSchema),
+  async (req: TypedRequestParams<typeof idSchema>, res: Response) => {
     const id = req.params.id;
     try {
       const user = await prisma.user.findUnique({
@@ -61,41 +62,28 @@ router.get(
 //get all posts of a specific user, filter by postType, with pagination
 router.get(
   "/:id/posts",
-  validate(idParameterSchema),
-  validate(queryParamsSchema),
-  async (req: Request, res: Response) => {
+  validateParams(idSchema),
+  validateQuery(userPostsQuery),
+  async (
+    req: TypedRequest<typeof idSchema, typeof userPostsQuery, ZodAny>,
+    res: Response,
+  ) => {
     const id = req.params.id;
-    const type =
-      typeof req.query.postType === "string"
-        ? req.query.postType.toUpperCase()
-        : undefined;
+    const type = req.query.postType;
 
-    const page = parseInt(req.query.page as string) || 1;
+    const page = req.query.page ? parseInt(req.query.page) : 1;
     const pageSize = 5; // Number of posts per page
     try {
-      let userPosts;
       const skip = (page - 1) * pageSize;
+      const userPosts = await prisma.post.findMany({
+        where: {
+          authorId: id,
+          type: type as PostType,
+        },
+        skip: skip,
+        take: pageSize,
+      });
 
-      // Check if type is provided in the query parameters
-      if (type) {
-        userPosts = await prisma.post.findMany({
-          where: {
-            authorId: id,
-            type: type as PostType,
-          },
-          skip: skip,
-          take: pageSize,
-        });
-      } else {
-        // If type is not provided, fetch all posts for the user
-        userPosts = await prisma.post.findMany({
-          where: {
-            authorId: id,
-          },
-          skip: skip,
-          take: pageSize,
-        });
-      }
       return res.status(StatusCodes.OK).json(userPosts);
     } catch (error) {
       res
@@ -108,10 +96,14 @@ router.get(
 //follow a user
 router.post(
   "/:id/follow",
-  validate(idParameterSchema),
-  async (req: Request, res: Response) => {
+  validateParams(idSchema),
+  validateQuery(followSchema),
+  async (
+    req: TypedRequest<typeof idSchema, typeof followSchema, ZodAny>,
+    res: Response,
+  ) => {
     const followerId = req.params.id;
-    const followingId = req.query.followid as string;
+    const followingId = req.query.followid;
     try {
       // Check if the user is trying to follow themselves
       if (followerId === followingId) {
@@ -155,8 +147,8 @@ router.post(
 //delete a specific user
 router.delete(
   "/:id",
-  validate(idParameterSchema),
-  async (req: Request, res: Response) => {
+  validateParams(idSchema),
+  async (req: TypedRequestParams<typeof idSchema>, res: Response) => {
     const id = req.params.id;
     try {
       const user = await prisma.user.delete({
