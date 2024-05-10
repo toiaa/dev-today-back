@@ -1,7 +1,7 @@
 import { Router, Response } from "express";
 import bcrypt from "bcrypt";
 import { prisma } from "../lib/prisma";
-import { validateBody } from "../middlewares/middleware";
+import { validate, ValidationType } from "../middlewares/middleware";
 import { StatusCodes } from "http-status-codes";
 import {
   emailSchema,
@@ -17,7 +17,7 @@ const saltRoundsRandom = bcrypt.genSaltSync(saltRounds);
 //register a new user
 router.post(
   "/register",
-  validateBody(userRegisterSchema),
+  validate(userRegisterSchema, ValidationType.BODY),
   async (req: TypedRequestBody<typeof userRegisterSchema>, res: Response) => {
     try {
       const hashedPassword = bcrypt.hashSync(
@@ -55,7 +55,7 @@ router.post(
 //login with email address and password
 router.post(
   "/login",
-  validateBody(userLoginSchema),
+  validate(userLoginSchema, ValidationType.BODY),
   async (req: TypedRequestBody<typeof userLoginSchema>, res: Response) => {
     try {
       const userFound = await prisma.user.findUnique({
@@ -88,7 +88,7 @@ router.post(
 
 router.post(
   "/user",
-  validateBody(emailSchema),
+  validate(emailSchema, ValidationType.BODY),
   async (req: TypedRequestBody<typeof emailSchema>, res: Response) => {
     try {
       const userFound = await prisma.user.findUnique({
