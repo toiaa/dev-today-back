@@ -66,3 +66,21 @@ export const onBoardingSchema = z
     }),
   })
   .required();
+
+export const profileSchema = z.object({
+  name: z.string().optional(),
+  bio: z
+    .string()
+    .max(130, {
+      message: "maximum of 130 characters",
+    })
+    .optional(),
+  githubLink: z.string().optional(),
+  githubHandle: z.string().optional(),
+  linkedinLink: z.string().optional(),
+  linkedinHandle: z.string().optional(),
+  xProfileLink: z.string().optional(),
+  xProfileHandle: z.string().optional(),
+  instagramLink: z.string().optional(),
+  instagramHandle: z.string().optional(),
+});
