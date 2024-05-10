@@ -2,21 +2,38 @@ import { Router, Request, Response } from "express";
 
 import { prisma } from "../lib/prisma";
 import { StatusCodes } from "http-status-codes";
-import { validate } from "../middlewares/authMiddleware";
-import { onBoardingSchema } from "../zodSchemas/authSchemas";
-import { idParameterSchema } from "../zodSchemas/postSchemas";
+import { validate, ValidationType } from "../middlewares/middleware";
+import { onBoardingSchema, idSchema, profileSchema } from "../lib/validations";
+import {
+  TypedRequest,
+  TypedRequestBody,
+  TypedRequestParams,
+} from "zod-express-middleware";
+import { ZodAny } from "zod";
 
 const router = Router();
 
 //update user with onboarding information
 router.post(
   "/onboarding",
-  validate(onBoardingSchema),
-  async (req: Request, res: Response) => {
+  validate(onBoardingSchema, ValidationType.BODY),
+  async (req: TypedRequestBody<typeof onBoardingSchema>, res: Response) => {
     try {
       const { journey, ambitions, tech, id } = req.body;
-      if (!id || !journey || !ambitions || !tech)
-        return res.status(StatusCodes.BAD_REQUEST).send("Missing fields");
+
+      // Check if onBoardingCompleted is already true for the user
+      const userProfile = await prisma.profile.findUnique({
+        where: {
+          userId: id,
+        },
+      });
+
+      if (userProfile && userProfile.onBoardingCompleted) {
+        return res
+          .status(StatusCodes.FORBIDDEN)
+          .json({ message: "Onboarding already completed for this user" });
+      }
+
       const updatedProfile = await prisma.profile.update({
         where: {
           userId: id,
@@ -38,28 +55,48 @@ router.post(
   },
 );
 
-//edit onboarding information on a user profile
+//update information on a user profile
 router.patch(
-  "/onboarding/:id",
-  validate(idParameterSchema),
-  async (req: Request, res: Response) => {
+  "/:id",
+  validate(idSchema, ValidationType.PARAMS),
+  validate(profileSchema, ValidationType.BODY),
+  async (
+    req: TypedRequest<typeof idSchema, ZodAny, typeof profileSchema>,
+    res: Response,
+  ) => {
     const id = req.params.id;
     try {
-      const { journey, ambitions, tech } = req.body;
-      if (!journey || !ambitions || !tech)
-        return res.status(StatusCodes.BAD_REQUEST).send("Missing fields");
-      const modifyUserOnboarding = await prisma.profile.update({
+      const {
+        name,
+        bio,
+        githubLink,
+        githubHandle,
+        linkedinLink,
+        linkedinHandle,
+        xProfileLink,
+        xProfileHandle,
+        instagramLink,
+        instagramHandle,
+      } = req.body;
+      const updatedProfile = await prisma.profile.update({
         where: {
           userId: id,
         },
         data: {
-          journey,
-          ambitions,
-          tech,
+          name,
+          bio,
+          githubLink,
+          githubHandle,
+          linkedinLink,
+          linkedinHandle,
+          xProfileLink,
+          xProfileHandle,
+          instagramLink,
+          instagramHandle,
         },
       });
 
-      return res.status(StatusCodes.OK).json(modifyUserOnboarding);
+      return res.status(StatusCodes.OK).json(updatedProfile);
     } catch (error) {
       console.error(error);
       res
@@ -72,8 +109,8 @@ router.patch(
 //return user profile including onboarding data:journey/ambitons/tech
 router.get(
   "/:id",
-  validate(idParameterSchema),
-  async (req: Request, res: Response) => {
+  validate(idSchema, ValidationType.PARAMS),
+  async (req: TypedRequestParams<typeof idSchema>, res: Response) => {
     const id = req.params.id;
     try {
       const user = await prisma.profile.findUnique({
