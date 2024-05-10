@@ -2,54 +2,32 @@ import { Request, Response, NextFunction } from "express";
 import { AnyZodObject, ZodError } from "zod";
 import { StatusCodes } from "http-status-codes";
 
-export function validateBody(schema: AnyZodObject) {
-  return (req: Request, res: Response, next: NextFunction) => {
-    try {
-      schema.parse(req.body);
-      next();
-    } catch (error) {
-      if (error instanceof ZodError) {
-        const errorMessages = error.errors.map((issue) => {
-          const label = issue.path.length > 1 ? issue.path[1] : issue.path[0];
-          return { message: `${label}: ${issue.message}` };
-        });
-        res
-          .status(StatusCodes.BAD_REQUEST)
-          .json({ error: "Invalid data", details: errorMessages });
-      } else {
-        res
-          .status(StatusCodes.INTERNAL_SERVER_ERROR)
-          .json({ error: "Internal Server Error" });
-      }
-    }
-  };
+export enum ValidationType {
+  BODY = "body",
+  PARAMS = "params",
+  QUERY = "query",
 }
-export function validateParams(schema: AnyZodObject) {
+
+export function validate(schema: AnyZodObject, type: ValidationType) {
   return (req: Request, res: Response, next: NextFunction) => {
-    try {
-      schema.parse(req.params);
-      next();
-    } catch (error) {
-      if (error instanceof ZodError) {
-        const errorMessages = error.errors.map((issue) => {
-          const label = issue.path.length > 1 ? issue.path[1] : issue.path[0];
-          return { message: `${label}: ${issue.message}` };
-        });
-        res
-          .status(StatusCodes.BAD_REQUEST)
-          .json({ error: "Invalid data", details: errorMessages });
-      } else {
-        res
+    let data;
+    switch (type) {
+      case ValidationType.BODY:
+        data = req.body;
+        break;
+      case ValidationType.PARAMS:
+        data = req.params;
+        break;
+      case ValidationType.QUERY:
+        data = req.query;
+        break;
+      default:
+        return res
           .status(StatusCodes.INTERNAL_SERVER_ERROR)
-          .json({ error: "Internal Server Error" });
-      }
+          .json({ error: "Invalid validation type" });
     }
-  };
-}
-export function validateQuery(schema: AnyZodObject) {
-  return (req: Request, res: Response, next: NextFunction) => {
     try {
-      schema.parse(req.query);
+      schema.parse(data);
       next();
     } catch (error) {
       if (error instanceof ZodError) {
