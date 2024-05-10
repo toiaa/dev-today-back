@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import { validateParams, validateQuery } from "../middlewares/middleware";
+import { validate, ValidationType } from "../middlewares/middleware";
 import { followSchema, idSchema, userPostsQuery } from "../lib/validations";
 import { prisma } from "../lib/prisma";
 import { StatusCodes } from "http-status-codes";
@@ -29,7 +29,7 @@ router.get("/", async (req: Request, res: Response) => {
 //return individual user with profile/following/followers and latest single post in each post type.
 router.get(
   "/:id",
-  validateParams(idSchema),
+  validate(idSchema, ValidationType.PARAMS),
   async (req: TypedRequestParams<typeof idSchema>, res: Response) => {
     const id = req.params.id;
     try {
@@ -62,8 +62,8 @@ router.get(
 //get all posts of a specific user, filter by postType, with pagination
 router.get(
   "/:id/posts",
-  validateParams(idSchema),
-  validateQuery(userPostsQuery),
+  validate(idSchema, ValidationType.PARAMS),
+  validate(userPostsQuery, ValidationType.QUERY),
   async (
     req: TypedRequest<typeof idSchema, typeof userPostsQuery, ZodAny>,
     res: Response,
@@ -96,8 +96,8 @@ router.get(
 //follow a user
 router.post(
   "/:id/follow",
-  validateParams(idSchema),
-  validateQuery(followSchema),
+  validate(idSchema, ValidationType.PARAMS),
+  validate(followSchema, ValidationType.QUERY),
   async (
     req: TypedRequest<typeof idSchema, typeof followSchema, ZodAny>,
     res: Response,
@@ -147,7 +147,7 @@ router.post(
 //delete a specific user
 router.delete(
   "/:id",
-  validateParams(idSchema),
+  validate(idSchema, ValidationType.PARAMS),
   async (req: TypedRequestParams<typeof idSchema>, res: Response) => {
     const id = req.params.id;
     try {
