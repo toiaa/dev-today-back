@@ -35,9 +35,19 @@ model Profile {
   onBoardingCompleted Boolean  @default(false)
   user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId              String   @id
+  name                String?
   journey             String?
   ambitions           String[]
   tech                String[]
+  bio                 String?
+  githubLink          String?
+  githubHandle        String?
+  linkedinLink        String?
+  linkedinHandle      String?
+  xProfileLink         String?
+  xProfileHandle       String?
+  instagramLink       String?
+  instagramHandle     String?
 }
 
 model Follow {
