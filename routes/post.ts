@@ -2,7 +2,7 @@ import { Router, Response } from "express";
 import { prisma } from "../lib/prisma";
 import { StatusCodes } from "http-status-codes";
 import { idSchema, postSchema, updatePostSchema } from "../lib/validations";
-import { validateBody, validateParams } from "../middlewares/middleware";
+import { validate, ValidationType } from "../middlewares/middleware";
 import {
   TypedRequest,
   TypedRequestBody,
@@ -14,7 +14,7 @@ const router = Router();
 //get a specific post with the post's id.
 router.get(
   "/:id",
-  validateParams(idSchema),
+  validate(idSchema, ValidationType.PARAMS),
   async (req: TypedRequestParams<typeof idSchema>, res: Response) => {
     const id = req.params.id;
     try {
@@ -43,7 +43,7 @@ router.get(
 //create a post
 router.post(
   "/",
-  validateBody(postSchema),
+  validate(postSchema, ValidationType.BODY),
   async (req: TypedRequestBody<typeof postSchema>, res: Response) => {
     const { title, content, authorId } = req.body;
     try {
@@ -68,8 +68,8 @@ router.post(
 //edit a post with its id
 router.patch(
   "/:id",
-  validateParams(idSchema),
-  validateBody(updatePostSchema),
+  validate(idSchema, ValidationType.PARAMS),
+  validate(updatePostSchema, ValidationType.BODY),
   async (
     req: TypedRequest<typeof idSchema, ZodAny, typeof updatePostSchema>,
     res: Response,
@@ -99,7 +99,7 @@ router.patch(
 //delete a single post
 router.delete(
   "/:id",
-  validateParams(idSchema),
+  validate(idSchema, ValidationType.PARAMS),
   async (req: TypedRequestParams<typeof idSchema>, res: Response) => {
     const id = req.params.id;
     try {
