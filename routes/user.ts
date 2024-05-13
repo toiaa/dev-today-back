@@ -1,6 +1,11 @@
 import { Router, Request, Response } from "express";
 import { validate, ValidationType } from "../middlewares/middleware";
-import { followSchema, idSchema, userPostsQuery } from "../lib/validations";
+import {
+  followSchema,
+  idSchema,
+  userGroupQuery,
+  userPostsQuery,
+} from "../lib/validations";
 import { prisma } from "../lib/prisma";
 import { StatusCodes } from "http-status-codes";
 import { PostType } from "@prisma/client";
@@ -26,7 +31,7 @@ router.get("/", async (req: Request, res: Response) => {
   }
 });
 
-//return individual user with profile/following/followers and latest single post in each post type.
+//return individual user with profile/following/followers and newest three posts.
 router.get(
   "/:id",
   validate(idSchema, ValidationType.PARAMS),
@@ -80,6 +85,11 @@ router.get(
           authorId: id,
           type: type as PostType,
         },
+        include: {
+          tags: true,
+          likes: true,
+          comments: true,
+        },
         skip: skip,
         take: pageSize,
       });
@@ -92,6 +102,38 @@ router.get(
     }
   },
 );
+
+// get all groups a specific user is a part of with pagination
+// router.get(
+//   "/id/groups",
+//   validate(idSchema, ValidationType.PARAMS),
+//   validate(userGroupQuery, ValidationType.QUERY),
+//   async (
+//     req: TypedRequest<typeof idSchema, typeof userGroupQuery, ZodAny>,
+//     res: Response
+//   ) => {
+//     const id = req.params.id;
+
+//     const page = req.query.page ? parseInt(req.query.page) : 1;
+//     const pageSize = 5; // Number of posts per page
+//     try {
+//       const skip = (page - 1) * pageSize;
+//       const userGroups = await prisma.groupUser.findMany({
+//         where: {
+//           userId: id, //need to get groupId and return the group
+//         },
+//         skip: skip,
+//         take: pageSize,
+//       });
+
+//       return res.status(StatusCodes.OK).json(userGroups);
+//     } catch (error) {
+//       res
+//         .status(StatusCodes.INTERNAL_SERVER_ERROR)
+//         .json({ message: "Internal server error" });
+//     }
+//   }
+// );
 
 //follow a user
 router.post(
