@@ -133,6 +133,13 @@ router.get(
           bio: true,
           groupUser: {
             take: 4,
+            include: {
+              user: {
+                select: {
+                  image: true,
+                },
+              },
+            },
           },
           _count: {
             select: { groupUser: true },
