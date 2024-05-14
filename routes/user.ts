@@ -44,7 +44,7 @@ router.get(
         },
         include: {
           profile: true,
-          following: true,
+          following: true, //wheter or not we are following the uer profile we are viewoing, only want a count of following and followers.
           followers: true,
           posts: {
             orderBy: {
@@ -104,36 +104,51 @@ router.get(
 );
 
 // get all groups a specific user is a part of with pagination
-// router.get(
-//   "/id/groups",
-//   validate(idSchema, ValidationType.PARAMS),
-//   validate(userGroupQuery, ValidationType.QUERY),
-//   async (
-//     req: TypedRequest<typeof idSchema, typeof userGroupQuery, ZodAny>,
-//     res: Response
-//   ) => {
-//     const id = req.params.id;
+router.get(
+  "/:id/groups",
+  validate(idSchema, ValidationType.PARAMS),
+  validate(userGroupQuery, ValidationType.QUERY),
+  async (
+    req: TypedRequest<typeof idSchema, typeof userGroupQuery, ZodAny>,
+    res: Response,
+  ) => {
+    const id = req.params.id;
 
-//     const page = req.query.page ? parseInt(req.query.page) : 1;
-//     const pageSize = 5; // Number of posts per page
-//     try {
-//       const skip = (page - 1) * pageSize;
-//       const userGroups = await prisma.groupUser.findMany({
-//         where: {
-//           userId: id, //need to get groupId and return the group
-//         },
-//         skip: skip,
-//         take: pageSize,
-//       });
+    const page = req.query.page ? parseInt(req.query.page) : 1;
+    const pageSize = 5; // Number of posts per page
+    try {
+      const skip = (page - 1) * pageSize;
+      const userGroups = await prisma.group.findMany({
+        where: {
+          groupUser: {
+            some: {
+              userId: id,
+            },
+          },
+        },
+        select: {
+          name: true,
+          coverImage: true,
+          bio: true,
+          groupUser: {
+            take: 4,
+          },
+          _count: {
+            select: { groupUser: true },
+          },
+        },
+        skip,
+        take: pageSize,
+      });
 
-//       return res.status(StatusCodes.OK).json(userGroups);
-//     } catch (error) {
-//       res
-//         .status(StatusCodes.INTERNAL_SERVER_ERROR)
-//         .json({ message: "Internal server error" });
-//     }
-//   }
-// );
+      return res.status(StatusCodes.OK).json(userGroups);
+    } catch (error) {
+      res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .json({ message: "Internal server error" });
+    }
+  },
+);
 
 //follow a user
 router.post(
