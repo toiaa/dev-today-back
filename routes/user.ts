@@ -151,6 +151,50 @@ router.get(
   },
 );
 
+//check if user is already following profile they are visiting
+router.get(
+  "/:id/following",
+  validate(idSchema, ValidationType.PARAMS),
+  validate(followSchema, ValidationType.QUERY),
+  async (
+    req: TypedRequest<typeof idSchema, typeof followSchema, ZodAny>,
+    res: Response,
+  ) => {
+    const followerId = req.params.id;
+    const checkFollowingId = req.query.followid;
+    try {
+      // Check if the user is trying to follow themselves
+      if (followerId === checkFollowingId) {
+        return res
+          .status(StatusCodes.BAD_REQUEST)
+          .json({ message: "You cannot follow yourself" });
+      }
+      // Check if the follow relation already exists
+      const existingFollow = await prisma.follow.findFirst({
+        where: {
+          followerId,
+          followingId: checkFollowingId,
+        },
+      });
+
+      if (!existingFollow) {
+        return res
+          .status(StatusCodes.OK)
+          .json({ message: "You are not following this user" });
+      }
+
+      return res
+        .status(StatusCodes.OK)
+        .json({ message: "You are already following this user" });
+    } catch (error) {
+      console.error(error);
+      res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .json({ message: "Internal server error" });
+    }
+  },
+);
+
 //follow a user
 router.post(
   "/:id/follow",
