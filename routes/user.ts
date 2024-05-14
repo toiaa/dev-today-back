@@ -44,13 +44,14 @@ router.get(
         },
         include: {
           profile: true,
-          following: true, //wheter or not we are following the uer profile we are viewoing, only want a count of following and followers.
-          followers: true,
           posts: {
             orderBy: {
               createdAt: "desc", // Order posts by createdAt in descending order
             },
             take: 3, // Take only the latest three posts
+          },
+          _count: {
+            select: { followers: true, following: true },
           },
         },
       });
