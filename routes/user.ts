@@ -104,7 +104,7 @@ router.get(
   },
 );
 
-// get all groups a specific user is a part of with pagination
+// get all groups a specific user is a part of and the first 4 users with their user image.
 router.get(
   "/:id/groups",
   validate(idSchema, ValidationType.PARAMS),
