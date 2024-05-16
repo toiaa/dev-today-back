@@ -31,9 +31,11 @@ export const generalPostSchema = z.object({
     .string()
     .min(4, { message: "must be at least 4 characters long." }),
   // tags: z.string().array().nonempty({ message: "must add at least one" }),
+  type: z.nativeEnum(PostType),
   authorId: z.string({ required_error: "is required" }).length(36, {
     message: "Not a valid ID",
   }),
+  groupId: z.string().min(4),
 });
 
 export const postSchema = generalPostSchema.required();
@@ -47,8 +49,8 @@ export const userPostsQuery = z.object({
   page: z.string().optional(),
 });
 
-export const followSchema = z.object({
-  followid: z.string(),
+export const viewerIdSchema = z.object({
+  viewerId: z.string(),
 });
 
 export const onBoardingSchema = z
@@ -83,4 +85,8 @@ export const profileSchema = z.object({
   xProfileHandle: z.string().optional(),
   instagramLink: z.string().optional(),
   instagramHandle: z.string().optional(),
+});
+
+export const userGroupQuery = z.object({
+  page: z.string().optional(),
 });
