@@ -1,4 +1,4 @@
-import { Router, Request, Response } from "express";
+import { Router, Response } from "express";
 
 import { prisma } from "../lib/prisma";
 import { StatusCodes } from "http-status-codes";
@@ -34,7 +34,7 @@ router.post(
           .json({ message: "Onboarding already completed for this user" });
       }
 
-      const updatedProfile = await prisma.profile.update({
+      await prisma.profile.update({
         where: {
           userId: id,
         },
@@ -45,7 +45,9 @@ router.post(
           tech,
         },
       });
-      return res.status(StatusCodes.CREATED).json(updatedProfile);
+      return res
+        .status(StatusCodes.CREATED)
+        .json({ message: "Onboarding completed" });
     } catch (error) {
       console.error(error);
       res
@@ -78,7 +80,7 @@ router.patch(
         instagramLink,
         instagramHandle,
       } = req.body;
-      const updatedProfile = await prisma.profile.update({
+      await prisma.profile.update({
         where: {
           userId: id,
         },
@@ -96,7 +98,7 @@ router.patch(
         },
       });
 
-      return res.status(StatusCodes.OK).json(updatedProfile);
+      return res.status(StatusCodes.OK).json({ message: "Profile updated" });
     } catch (error) {
       console.error(error);
       res
