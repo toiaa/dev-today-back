@@ -24,7 +24,7 @@ router.post(
         req.body.password,
         saltRoundsRandom,
       );
-      const newUser = await prisma.user.create({
+      await prisma.user.create({
         data: {
           username: req.body.username,
           email: req.body.email.toLowerCase(),
@@ -36,7 +36,9 @@ router.post(
           },
         },
       });
-      res.status(StatusCodes.CREATED).json(newUser);
+      res
+        .status(StatusCodes.CREATED)
+        .json({ message: "User created successfully" });
     } catch (error: any) {
       console.error(error);
       if (error.code === "P2002") {
@@ -77,7 +79,7 @@ router.post(
           .status(StatusCodes.BAD_REQUEST)
           .json({ message: "Incorrect email or password" });
       }
-      res.status(StatusCodes.OK).json(userFound);
+      res.status(StatusCodes.OK).json({ message: "Loged in successfully" });
     } catch (error) {
       res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
@@ -86,6 +88,7 @@ router.post(
   },
 );
 
+//returns user information including profile data
 router.post(
   "/user",
   validate(emailSchema, ValidationType.BODY),
