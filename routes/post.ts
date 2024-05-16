@@ -45,13 +45,15 @@ router.post(
   "/",
   validate(postSchema, ValidationType.BODY),
   async (req: TypedRequestBody<typeof postSchema>, res: Response) => {
-    const { title, content, authorId } = req.body;
+    const { title, content, type, authorId, groupId } = req.body;
     try {
       const post = await prisma.post.create({
         data: {
           title,
           content,
+          type,
           authorId,
+          groupId,
         },
       });
 
@@ -103,13 +105,13 @@ router.delete(
   async (req: TypedRequestParams<typeof idSchema>, res: Response) => {
     const id = req.params.id;
     try {
-      const deletedPost = await prisma.post.delete({
+      await prisma.post.delete({
         where: {
           id,
         },
       });
 
-      return res.status(StatusCodes.OK).json(deletedPost);
+      return res.status(StatusCodes.OK).json({ message: "Post deleted" });
     } catch (error) {
       console.error(error);
       return res
