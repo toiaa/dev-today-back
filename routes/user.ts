@@ -1,15 +1,20 @@
 import { Router, Request, Response } from "express";
 import { validate, ValidationType } from "../middlewares/middleware";
 import {
-  followSchema,
+  viewerIdSchema,
   idSchema,
   userGroupQuery,
   userPostsQuery,
+  likeIdSchema,
 } from "../lib/validations";
 import { prisma } from "../lib/prisma";
 import { StatusCodes } from "http-status-codes";
 import { PostType } from "@prisma/client";
-import { TypedRequest, TypedRequestParams } from "zod-express-middleware";
+import {
+  TypedRequest,
+  TypedRequestBody,
+  TypedRequestParams,
+} from "zod-express-middleware";
 import { ZodAny } from "zod";
 
 const router = Router();
@@ -18,6 +23,9 @@ const router = Router();
 router.get("/", async (req: Request, res: Response) => {
   try {
     const users = await prisma.user.findMany({
+      omit: {
+        password: true,
+      },
       include: {
         profile: true,
       },
@@ -35,12 +43,21 @@ router.get("/", async (req: Request, res: Response) => {
 router.get(
   "/:id",
   validate(idSchema, ValidationType.PARAMS),
-  async (req: TypedRequestParams<typeof idSchema>, res: Response) => {
+  validate(viewerIdSchema, ValidationType.QUERY),
+  async (
+    req: TypedRequest<typeof idSchema, typeof viewerIdSchema, ZodAny>,
+    res: Response,
+  ) => {
     const id = req.params.id;
+    const checkFollowingId = req.query.viewerId;
+
     try {
       const user = await prisma.user.findUnique({
         where: {
           id,
+        },
+        omit: {
+          password: true,
         },
         include: {
           profile: true,
@@ -53,9 +70,18 @@ router.get(
           _count: {
             select: { followers: true, following: true },
           },
+          followers: {
+            where: {
+              followerId: checkFollowingId,
+            },
+          },
         },
       });
-      return res.status(StatusCodes.OK).json(user);
+
+      let userIsFollowed = false;
+      if (user?.followers.length) userIsFollowed = true;
+
+      return res.status(StatusCodes.OK).json({ user, userIsFollowed });
     } catch (error) {
       console.error(error);
       res
@@ -158,61 +184,31 @@ router.get(
   },
 );
 
-//check if user is already following profile they are visiting
-router.get(
-  "/:id/following",
-  validate(idSchema, ValidationType.PARAMS),
-  validate(followSchema, ValidationType.QUERY),
-  async (
-    req: TypedRequest<typeof idSchema, typeof followSchema, ZodAny>,
-    res: Response,
-  ) => {
-    const followerId = req.params.id;
-    const checkFollowingId = req.query.followid;
-    try {
-      // Check if the user is trying to follow themselves
-      if (followerId === checkFollowingId) {
-        return res
-          .status(StatusCodes.BAD_REQUEST)
-          .json({ message: "You cannot follow yourself" });
-      }
-      // Check if the follow relation already exists
-      const existingFollow = await prisma.follow.findFirst({
-        where: {
-          followerId,
-          followingId: checkFollowingId,
-        },
-      });
+//like a post of another user
+// router.post(
+//   "/like",
+//   validate(likeIdSchema, ValidationType.BODY),
+//   async (
+//     req: TypedRequestBody<typeof likeIdSchema>,
+//     res: Response
+//   ) => {
+//     const likedPostId = req.body.likedPostId;
+//     const likerId = req.body.likerId;
 
-      if (!existingFollow) {
-        return res
-          .status(StatusCodes.OK)
-          .json({ message: "You are not following this user" });
-      }
-
-      return res
-        .status(StatusCodes.OK)
-        .json({ message: "You are already following this user" });
-    } catch (error) {
-      console.error(error);
-      res
-        .status(StatusCodes.INTERNAL_SERVER_ERROR)
-        .json({ message: "Internal server error" });
-    }
-  },
-);
+//   }
+// );
 
 //follow a user
 router.post(
   "/:id/follow",
   validate(idSchema, ValidationType.PARAMS),
-  validate(followSchema, ValidationType.QUERY),
+  validate(viewerIdSchema, ValidationType.QUERY),
   async (
-    req: TypedRequest<typeof idSchema, typeof followSchema, ZodAny>,
+    req: TypedRequest<typeof idSchema, typeof viewerIdSchema, ZodAny>,
     res: Response,
   ) => {
     const followerId = req.params.id;
-    const followingId = req.query.followid;
+    const followingId = req.query.viewerId;
     try {
       // Check if the user is trying to follow themselves
       if (followerId === followingId) {
