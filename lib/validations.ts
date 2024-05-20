@@ -95,9 +95,3 @@ export const userGroupQuery = z.object({
 export const likeIdSchema = z.object({
   likerId: z.string(),
 });
-
-// api/post/:id/like
-//post
-//we have the id of post we like
-//body: send user that likes the post
-//userId.
