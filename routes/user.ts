@@ -81,7 +81,7 @@ router.get(
 
       const combinedUserInfo = { ...userCopy, userIsFollowed };
 
-      return res.status(StatusCodes.OK).json({ user: combinedUserInfo });
+      return res.status(StatusCodes.OK).json(combinedUserInfo);
     } catch (error) {
       console.error(error);
       res
