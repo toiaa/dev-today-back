@@ -51,7 +51,7 @@ export const userPostsQuery = z.object({
 });
 
 export const viewerIdSchema = z.object({
-  viewerId: z.string(),
+  viewerId: z.string().optional(),
 });
 
 export const onBoardingSchema = z
