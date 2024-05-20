@@ -136,6 +136,7 @@ router.patch(
 router.post(
   "/:id/like",
   validate(idSchema, ValidationType.PARAMS),
+  validate(likeIdSchema, ValidationType.BODY),
   async (
     req: TypedRequest<typeof idSchema, ZodAny, typeof likeIdSchema>,
     res: Response,
