@@ -36,6 +36,7 @@ export const generalPostSchema = z.object({
     message: "Not a valid ID",
   }),
   groupId: z.string().min(4),
+  tags: z.string().array(),
 });
 
 export const postSchema = generalPostSchema.required();
@@ -90,3 +91,13 @@ export const profileSchema = z.object({
 export const userGroupQuery = z.object({
   page: z.string().optional(),
 });
+
+export const likeIdSchema = z.object({
+  likerId: z.string(),
+});
+
+// api/post/:id/like
+//post
+//we have the id of post we like
+//body: send user that likes the post
+//userId.

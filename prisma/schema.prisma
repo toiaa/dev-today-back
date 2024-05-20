@@ -81,19 +81,19 @@ model Post {
 }
 
 model Like {
-  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  authorId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
   post     Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
   postId   String
 
-  @@id([authorId, postId])
+  @@id([userId, postId])
 }
 
 //intermediary table to link posts to tags
 
 model Tag {
   id   String @id @default(uuid())
-  name String
+  name String @unique
   post Post[]
 }
 

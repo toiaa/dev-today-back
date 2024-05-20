@@ -5,16 +5,11 @@ import {
   idSchema,
   userGroupQuery,
   userPostsQuery,
-  likeIdSchema,
 } from "../lib/validations";
 import { prisma } from "../lib/prisma";
 import { StatusCodes } from "http-status-codes";
 import { PostType } from "@prisma/client";
-import {
-  TypedRequest,
-  TypedRequestBody,
-  TypedRequestParams,
-} from "zod-express-middleware";
+import { TypedRequest, TypedRequestParams } from "zod-express-middleware";
 import { ZodAny } from "zod";
 
 const router = Router();
@@ -81,7 +76,12 @@ router.get(
       let userIsFollowed = false;
       if (user?.followers.length) userIsFollowed = true;
 
-      return res.status(StatusCodes.OK).json({ user, userIsFollowed });
+      const userCopy = { ...user };
+      delete userCopy?.followers;
+
+      return res
+        .status(StatusCodes.OK)
+        .json({ user: userCopy, userIsFollowed });
     } catch (error) {
       console.error(error);
       res
@@ -183,20 +183,6 @@ router.get(
     }
   },
 );
-
-//like a post of another user
-// router.post(
-//   "/like",
-//   validate(likeIdSchema, ValidationType.BODY),
-//   async (
-//     req: TypedRequestBody<typeof likeIdSchema>,
-//     res: Response
-//   ) => {
-//     const likedPostId = req.body.likedPostId;
-//     const likerId = req.body.likerId;
-
-//   }
-// );
 
 //follow a user
 router.post(
