@@ -79,7 +79,7 @@ router.post(
           .status(StatusCodes.BAD_REQUEST)
           .json({ message: "Incorrect email or password" });
       }
-      res.status(StatusCodes.OK).json({ message: "Loged in successfully" });
+      res.status(StatusCodes.OK).json(userFound);
     } catch (error) {
       res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
