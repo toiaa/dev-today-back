@@ -79,9 +79,9 @@ router.get(
       const userCopy = { ...user };
       delete userCopy?.followers;
 
-      return res
-        .status(StatusCodes.OK)
-        .json({ user: userCopy, userIsFollowed });
+      const combinedUserInfo = { ...userCopy, userIsFollowed };
+
+      return res.status(StatusCodes.OK).json({ user: combinedUserInfo });
     } catch (error) {
       console.error(error);
       res
