@@ -9,6 +9,7 @@ import {
   userRegisterSchema,
 } from "../lib/validations";
 import { TypedRequestBody } from "zod-express-middleware";
+import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 
 const router = Router();
 const saltRounds = 10;
@@ -39,13 +40,14 @@ router.post(
       res
         .status(StatusCodes.CREATED)
         .json({ message: "User created successfully" });
-    } catch (error: any) {
-      console.error(error);
-      if (error.code === "P2002") {
-        console.error("Error", "Email already exists");
-        return res
-          .status(StatusCodes.BAD_REQUEST)
-          .json({ message: "Error user already exists" });
+    } catch (error) {
+      if (error instanceof PrismaClientKnownRequestError) {
+        if (error.code === "P2002") {
+          console.error("Error", "Email already exists");
+          return res
+            .status(StatusCodes.BAD_REQUEST)
+            .json({ message: "Error user already exists" });
+        }
       }
       res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
