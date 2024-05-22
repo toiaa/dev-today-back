@@ -20,15 +20,13 @@ router.post(
   "/register",
   validate(userRegisterSchema, ValidationType.BODY),
   async (req: TypedRequestBody<typeof userRegisterSchema>, res: Response) => {
+    const { username, email, password } = req.body;
     try {
-      const hashedPassword = bcrypt.hashSync(
-        req.body.password,
-        saltRoundsRandom,
-      );
+      const hashedPassword = bcrypt.hashSync(password, saltRoundsRandom);
       await prisma.user.create({
         data: {
-          username: req.body.username,
-          email: req.body.email.toLowerCase(),
+          username,
+          email: email.toLowerCase(),
           password: hashedPassword,
           profile: {
             create: {
@@ -43,9 +41,8 @@ router.post(
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError) {
         if (error.code === "P2002") {
-          console.error("Error", "Email already exists");
           return res
-            .status(StatusCodes.BAD_REQUEST)
+            .status(StatusCodes.CONFLICT)
             .json({ message: "Error user already exists" });
         }
       }
@@ -61,10 +58,11 @@ router.post(
   "/login",
   validate(userLoginSchema, ValidationType.BODY),
   async (req: TypedRequestBody<typeof userLoginSchema>, res: Response) => {
+    const { email, password } = req.body;
     try {
       const userFound = await prisma.user.findUnique({
         where: {
-          email: req.body.email,
+          email,
         },
       });
       if (!userFound) {
@@ -73,7 +71,7 @@ router.post(
           .json({ message: "No user found" });
       }
       const isAuthenticated = await bcrypt.compareSync(
-        req.body.password,
+        password,
         userFound.password,
       );
       if (!isAuthenticated) {
@@ -90,6 +88,7 @@ router.post(
   },
 );
 
+//WE DON'T NEED THIS CAN BE DELETED?
 //returns user information including profile data
 router.post(
   "/user",
