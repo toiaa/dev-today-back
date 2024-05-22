@@ -5,12 +5,14 @@ import {
   idSchema,
   userGroupQuery,
   userPostsQuery,
+  followViewerIdSchema,
 } from "../lib/validations";
 import { prisma } from "../lib/prisma";
 import { StatusCodes } from "http-status-codes";
 import { PostType } from "@prisma/client";
 import { TypedRequest, TypedRequestParams } from "zod-express-middleware";
 import { ZodAny } from "zod";
+import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 
 const router = Router();
 
@@ -34,7 +36,7 @@ router.get("/", async (req: Request, res: Response) => {
   }
 });
 
-//return individual user with profile/following/followers and newest three posts.
+//return individual user with profile, following & followers count, whether user whose profile is being viewed is follwed by person loged in, and newest three posts
 router.get(
   "/:id",
   validate(idSchema, ValidationType.PARAMS),
@@ -73,11 +75,20 @@ router.get(
         },
       });
 
-      let userIsFollowed = false;
-      if (user?.followers.length) userIsFollowed = true;
+      const followerArray = user?.followers;
+
+      const userIsFollowed = followerArray?.some(
+        (item) => item.followerId === checkFollowingId,
+      );
 
       const userCopy = { ...user, userIsFollowed };
       delete userCopy?.followers;
+
+      if (!user) {
+        return res
+          .status(StatusCodes.NOT_FOUND)
+          .send("No user with that ID found");
+      }
 
       return res.status(StatusCodes.OK).json(userCopy);
     } catch (error) {
@@ -111,13 +122,23 @@ router.get(
           type: type as PostType,
         },
         include: {
-          tags: true,
+          tags: {
+            select: {
+              name: true,
+            },
+          },
           likes: true,
           comments: true,
         },
         skip: skip,
         take: pageSize,
       });
+
+      if (!userPosts.length) {
+        return res
+          .status(StatusCodes.NOT_FOUND)
+          .send("No posts for user found");
+      }
 
       return res.status(StatusCodes.OK).json(userPosts);
     } catch (error) {
@@ -173,6 +194,12 @@ router.get(
         take: pageSize,
       });
 
+      if (!userGroups.length) {
+        return res
+          .status(StatusCodes.NOT_FOUND)
+          .send("No groups for user found");
+      }
+
       return res.status(StatusCodes.OK).json(userGroups);
     } catch (error) {
       res
@@ -186,9 +213,9 @@ router.get(
 router.post(
   "/:id/follow",
   validate(idSchema, ValidationType.PARAMS),
-  validate(viewerIdSchema, ValidationType.QUERY),
+  validate(followViewerIdSchema, ValidationType.QUERY),
   async (
-    req: TypedRequest<typeof idSchema, typeof viewerIdSchema, ZodAny>,
+    req: TypedRequest<typeof idSchema, typeof followViewerIdSchema, ZodAny>,
     res: Response,
   ) => {
     const followerId = req.params.id;
@@ -226,6 +253,13 @@ router.post(
       return res.status(StatusCodes.OK).json(newFollow);
     } catch (error) {
       console.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        if (error.code === "P2025") {
+          return res
+            .status(StatusCodes.NOT_FOUND)
+            .json({ message: "One or more Ids do not exist" });
+        }
+      }
       res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
         .json({ message: "Internal server error" });
@@ -250,13 +284,16 @@ router.delete(
         res.status(StatusCodes.OK).json({
           msg: "User deleted",
         });
-      } else {
-        res
-          .status(StatusCodes.BAD_REQUEST)
-          .json({ msg: `No member with id of ${req.params.id}` });
       }
     } catch (error) {
       console.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        if (error.code === "P2025") {
+          return res
+            .status(StatusCodes.NOT_FOUND)
+            .json({ message: "User with this ID does not exist" });
+        }
+      }
       res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
         .json({ message: "Internal server error" });
@@ -264,6 +301,7 @@ router.delete(
   },
 );
 
+//DELETE THIS WE DO NOT NEED IT?
 // delete all users in the database
 router.delete("/delete-db-users", async (req: Request, res: Response) => {
   try {
