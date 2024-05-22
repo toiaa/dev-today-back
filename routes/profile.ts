@@ -10,6 +10,7 @@ import {
   TypedRequestParams,
 } from "zod-express-middleware";
 import { ZodAny } from "zod";
+import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 
 const router = Router();
 
@@ -50,6 +51,13 @@ router.post(
         .json({ message: "Onboarding completed" });
     } catch (error) {
       console.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        if (error.code === "P2025") {
+          return res
+            .status(StatusCodes.NOT_FOUND)
+            .json({ message: "User to update does not exist" });
+        }
+      }
       res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
         .json({ message: "Internal server error" });
@@ -97,10 +105,16 @@ router.patch(
           instagramHandle,
         },
       });
-
       return res.status(StatusCodes.OK).json({ message: "Profile updated" });
     } catch (error) {
       console.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        if (error.code === "P2025") {
+          return res
+            .status(StatusCodes.NOT_FOUND)
+            .json({ message: "User to update does not exist" });
+        }
+      }
       res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
         .json({ message: "Internal server error" });
@@ -108,6 +122,7 @@ router.patch(
   },
 );
 
+//WE DO NOT USE, THIS CAN BE DELETED!
 //return user profile including onboarding data:journey/ambitons/tech
 router.get(
   "/:id",
