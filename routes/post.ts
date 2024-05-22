@@ -3,7 +3,7 @@ import { prisma } from "../lib/prisma";
 import { StatusCodes } from "http-status-codes";
 import {
   idSchema,
-  likeIdSchema,
+  likerIdSchema,
   postSchema,
   updatePostSchema,
 } from "../lib/validations";
@@ -24,19 +24,24 @@ router.get(
   async (req: TypedRequestParams<typeof idSchema>, res: Response) => {
     const id = req.params.id;
     try {
-      const posts = await prisma.post.findMany({
+      const post = await prisma.post.findUnique({
         where: {
           id,
         },
         include: {
-          tags: true,
+          tags: {
+            select: {
+              name: true,
+            },
+          },
         },
       });
-      if (posts.length === 0) {
-        return res.status(StatusCodes.NOT_FOUND).send("No posts found");
-      } else {
-        return res.status(StatusCodes.OK).json(posts);
+      if (!post) {
+        return res
+          .status(StatusCodes.NOT_FOUND)
+          .send("No post with that ID found");
       }
+      return res.status(StatusCodes.OK).json(post);
     } catch (error) {
       console.error(error);
       return res
@@ -54,44 +59,53 @@ router.post(
     const { title, content, type, authorId, groupId, tags } = req.body;
 
     try {
-      const existingTagId: ({ id: string; name: string } | null)[] = [];
-      const getTagIds = await tags.map(async (tag) => {
-        const existingTag = await prisma.tag.findUnique({
-          where: {
-            name: tag,
-          },
-        });
+      const tagIds = await Promise.all(
+        tags.map(async (tag) => {
+          const existingTag = await prisma.tag.findUnique({
+            where: {
+              name: tag,
+            },
+            select: {
+              id: true,
+            },
+          });
 
-        if (existingTag !== null) {
-          existingTagId.push(existingTag);
-        } else {
+          if (existingTag !== null) {
+            return existingTag.id;
+          }
+
           const createdTag = await prisma.tag.create({
             data: {
               name: tag,
             },
+            select: {
+              id: true,
+            },
           });
-          existingTagId.push(createdTag);
-          console.log("1stexistingTagId", existingTagId);
-        }
-        return existingTagId;
-      });
+          return createdTag.id;
+        }),
+      );
 
-      const creatPost = await prisma.post.create({
+      const createPost = await prisma.post.create({
         data: {
-          title,
-          content,
-          type,
           authorId,
+          title,
+          type,
+          content,
           groupId,
-          // tags: {
-          //   connect: getTagIds.map((tag) => ({ id: tag?.id })),
-          // },
+          tags: {
+            connect: tagIds.map((id) => ({ id })),
+          },
         },
         include: {
-          tags: true,
+          tags: {
+            select: {
+              name: true,
+            },
+          },
         },
       });
-      return res.status(StatusCodes.OK).json(creatPost);
+      return res.status(StatusCodes.OK).json(createPost);
     } catch (error) {
       console.error(error);
       return res
@@ -125,6 +139,13 @@ router.patch(
       return res.status(StatusCodes.OK).json(posts);
     } catch (error) {
       console.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        if (error.code === "P2025") {
+          return res
+            .status(StatusCodes.NOT_FOUND)
+            .json({ message: "Post to update does not exist" });
+        }
+      }
       return res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
         .json({ message: "Internal server error" });
@@ -136,9 +157,9 @@ router.patch(
 router.post(
   "/:id/like",
   validate(idSchema, ValidationType.PARAMS),
-  validate(likeIdSchema, ValidationType.BODY),
+  validate(likerIdSchema, ValidationType.BODY),
   async (
-    req: TypedRequest<typeof idSchema, ZodAny, typeof likeIdSchema>,
+    req: TypedRequest<typeof idSchema, ZodAny, typeof likerIdSchema>,
     res: Response,
   ) => {
     const likedPostId = req.params.id;
@@ -167,6 +188,16 @@ router.post(
             .status(StatusCodes.CONFLICT)
             .json({ message: "You can't like a post twice" });
         }
+        if (error.code === "P2003") {
+          return res
+            .status(StatusCodes.NOT_FOUND)
+            .json({ message: "User with this ID not found" });
+        }
+        if (error.code === "P2025") {
+          return res
+            .status(StatusCodes.NOT_FOUND)
+            .json({ message: "Post with this ID not found" });
+        }
       }
       return res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
@@ -179,8 +210,9 @@ router.post(
 router.post(
   "/:id/unlike",
   validate(idSchema, ValidationType.PARAMS),
+  validate(likerIdSchema, ValidationType.BODY),
   async (
-    req: TypedRequest<typeof idSchema, ZodAny, typeof likeIdSchema>,
+    req: TypedRequest<typeof idSchema, ZodAny, typeof likerIdSchema>,
     res: Response,
   ) => {
     const likedPostId = req.params.id;
@@ -197,6 +229,13 @@ router.post(
       return res.status(StatusCodes.OK).json({ message: "Unliked this post" });
     } catch (error) {
       console.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        if (error.code === "P2025") {
+          return res
+            .status(StatusCodes.NOT_FOUND)
+            .json({ message: "Record to delete does not exist" });
+        }
+      }
       return res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
         .json({ message: "Internal server error" });
@@ -216,10 +255,16 @@ router.delete(
           id,
         },
       });
-
       return res.status(StatusCodes.OK).json({ message: "Post deleted" });
     } catch (error) {
       console.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        if (error.code === "P2025") {
+          return res
+            .status(StatusCodes.NOT_FOUND)
+            .json({ message: "Record to delete does not exist" });
+        }
+      }
       return res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
         .json({ message: "Internal server error" });
