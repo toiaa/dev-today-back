@@ -51,8 +51,21 @@ export const userPostsQuery = z.object({
 });
 
 export const viewerIdSchema = z.object({
-  viewerId: z.string().optional(),
+  viewerId: z
+    .string()
+    .length(36, {
+      message: "Not a valid ID",
+    })
+    .optional(),
 });
+
+export const followViewerIdSchema = z
+  .object({
+    viewerId: z.string().length(36, {
+      message: "Not a valid ID",
+    }),
+  })
+  .required();
 
 export const onBoardingSchema = z
   .object({
@@ -92,6 +105,8 @@ export const userGroupQuery = z.object({
   page: z.string().optional(),
 });
 
-export const likeIdSchema = z.object({
-  likerId: z.string(),
+export const likerIdSchema = z.object({
+  likerId: z.string({ required_error: "is required" }).length(36, {
+    message: "Not a valid ID",
+  }),
 });
