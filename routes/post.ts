@@ -56,7 +56,18 @@ router.post(
   "/",
   validate(postSchema, ValidationType.BODY),
   async (req: TypedRequestBody<typeof postSchema>, res: Response) => {
-    const { title, content, type, authorId, groupId, tags } = req.body;
+    const {
+      title,
+      content,
+      type,
+      meetDate,
+      location,
+      audio,
+      image,
+      authorId,
+      groupId,
+      tags,
+    } = req.body;
 
     try {
       const tagIds = await Promise.all(
@@ -91,7 +102,11 @@ router.post(
           authorId,
           title,
           type,
+          meetDate,
+          location,
           content,
+          audio,
+          image,
           groupId,
           tags: {
             connect: tagIds.map((id) => ({ id })),
