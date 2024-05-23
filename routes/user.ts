@@ -75,6 +75,12 @@ router.get(
         },
       });
 
+      if (!user) {
+        return res
+          .status(StatusCodes.NOT_FOUND)
+          .json({ message: "No user with that ID found" });
+      }
+
       const followerArray = user?.followers;
 
       const userIsFollowed = followerArray?.some(
@@ -82,15 +88,10 @@ router.get(
       );
 
       const userCopy = { ...user, userIsFollowed };
-      delete userCopy?.followers;
+      // delete userCopy?.followers;
+      const { followers, ...userWithoutFollowers } = userCopy;
 
-      if (!user) {
-        return res
-          .status(StatusCodes.NOT_FOUND)
-          .send("No user with that ID found");
-      }
-
-      return res.status(StatusCodes.OK).json(userCopy);
+      return res.status(StatusCodes.OK).json(userWithoutFollowers);
     } catch (error) {
       console.error(error);
       res
@@ -133,12 +134,6 @@ router.get(
         skip: skip,
         take: pageSize,
       });
-
-      if (!userPosts.length) {
-        return res
-          .status(StatusCodes.NOT_FOUND)
-          .send("No posts for user found");
-      }
 
       return res.status(StatusCodes.OK).json(userPosts);
     } catch (error) {
@@ -194,12 +189,6 @@ router.get(
         take: pageSize,
       });
 
-      if (!userGroups.length) {
-        return res
-          .status(StatusCodes.NOT_FOUND)
-          .send("No groups for user found");
-      }
-
       return res.status(StatusCodes.OK).json(userGroups);
     } catch (error) {
       res
@@ -218,8 +207,57 @@ router.post(
     req: TypedRequest<typeof idSchema, typeof followViewerIdSchema, ZodAny>,
     res: Response,
   ) => {
-    const followerId = req.params.id;
-    const followingId = req.query.viewerId;
+    const followerId = req.query.viewerId;
+    const followingId = req.params.id;
+    try {
+      // Check if the user is trying to follow themselves
+      if (followerId === followingId) {
+        return res
+          .status(StatusCodes.CONFLICT)
+          .json({ message: "You cannot follow yourself" });
+      }
+
+      // Create a new follow relation
+      const newFollow = await prisma.follow.create({
+        data: {
+          follower: { connect: { id: followerId } },
+          following: { connect: { id: followingId } },
+        },
+      });
+
+      return res.status(StatusCodes.OK).json(newFollow);
+    } catch (error) {
+      console.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        if (error.code === "P2025") {
+          return res
+            .status(StatusCodes.NOT_FOUND)
+            .json({ message: "One or more Ids do not exist" });
+        }
+        if (error.code === "P2002") {
+          return res
+            .status(StatusCodes.NOT_FOUND)
+            .json({ message: "You are already following this user" });
+        }
+      }
+      res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .json({ message: "Internal server error" });
+    }
+  },
+);
+
+//unfollow a user
+router.post(
+  "/:id/follow",
+  validate(idSchema, ValidationType.PARAMS),
+  validate(followViewerIdSchema, ValidationType.QUERY),
+  async (
+    req: TypedRequest<typeof idSchema, typeof followViewerIdSchema, ZodAny>,
+    res: Response,
+  ) => {
+    const followerId = req.query.viewerId;
+    const followingId = req.params.id;
     try {
       // Check if the user is trying to follow themselves
       if (followerId === followingId) {
@@ -272,9 +310,7 @@ router.delete(
       });
 
       if (user) {
-        res.status(StatusCodes.OK).json({
-          msg: "User deleted",
-        });
+        res.status(StatusCodes.OK).json({ message: "User deleted" });
       }
     } catch (error) {
       console.error(error);
