@@ -70,7 +70,7 @@ router.post(
           .status(StatusCodes.BAD_REQUEST)
           .json({ message: "No user found" });
       }
-      const isAuthenticated = await bcrypt.compareSync(
+      const isAuthenticated = await bcrypt.compare(
         password,
         userFound.password,
       );
@@ -88,8 +88,7 @@ router.post(
   },
 );
 
-//WE DON'T NEED THIS CAN BE DELETED?
-//returns user information including profile data
+//returns user information including profile data  USING THIS FOR OUR SESSION!!
 router.post(
   "/user",
   validate(emailSchema, ValidationType.BODY),
