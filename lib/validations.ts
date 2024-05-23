@@ -25,21 +25,23 @@ export const idSchema = z.object({
 });
 
 export const generalPostSchema = z.object({
-  title: z.string().min(4, { message: "must be at least 4 characters long." }),
-  // type: z.string().min(4, { message: "must choose one." }),
-  content: z
-    .string()
-    .min(4, { message: "must be at least 4 characters long." }),
-  // tags: z.string().array().nonempty({ message: "must add at least one" }),
-  type: z.nativeEnum(PostType),
   authorId: z.string({ required_error: "is required" }).length(36, {
     message: "Not a valid ID",
   }),
+  title: z.string().min(4, { message: "must be at least 4 characters long." }),
+  type: z.nativeEnum(PostType),
+  content: z
+    .string()
+    .min(4, { message: "must be at least 4 characters long." }),
+  meetDate: z.date().optional(),
+  location: z.string().optional(),
+  audio: z.string().optional(),
+  image: z.string().optional(),
   groupId: z.string().min(4),
-  tags: z.string().array(),
+  tags: z.string().array().nonempty({ message: "must add at least one" }),
 });
 
-export const postSchema = generalPostSchema.required();
+export const postSchema = generalPostSchema;
 
 export const updatePostSchema = generalPostSchema
   .pick({ title: true, content: true })
