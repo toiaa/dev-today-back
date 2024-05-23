@@ -224,22 +224,8 @@ router.post(
       // Check if the user is trying to follow themselves
       if (followerId === followingId) {
         return res
-          .status(StatusCodes.BAD_REQUEST)
+          .status(StatusCodes.CONFLICT)
           .json({ message: "You cannot follow yourself" });
-      }
-
-      // Check if the follow relation already exists
-      const existingFollow = await prisma.follow.findFirst({
-        where: {
-          followerId,
-          followingId,
-        },
-      });
-
-      if (existingFollow) {
-        return res
-          .status(StatusCodes.BAD_REQUEST)
-          .json({ message: "You are already following this user" });
       }
 
       // Create a new follow relation
@@ -258,6 +244,11 @@ router.post(
           return res
             .status(StatusCodes.NOT_FOUND)
             .json({ message: "One or more Ids do not exist" });
+        }
+        if (error.code === "P2002") {
+          return res
+            .status(StatusCodes.NOT_FOUND)
+            .json({ message: "You are already following this user" });
         }
       }
       res
@@ -300,25 +291,5 @@ router.delete(
     }
   },
 );
-
-//DELETE THIS WE DO NOT NEED IT?
-// delete all users in the database
-router.delete("/delete-db-users", async (req: Request, res: Response) => {
-  try {
-    const users = await prisma.user.findMany();
-    if (users.length === 0) {
-      return res.send("No users to delete");
-    }
-    if (users) {
-      await prisma.user.deleteMany({});
-      return res.send("Users deleted");
-    }
-  } catch (error) {
-    console.error(error);
-    return res
-      .status(StatusCodes.INTERNAL_SERVER_ERROR)
-      .json({ message: "Internal server error" });
-  }
-});
 
 export default router;
