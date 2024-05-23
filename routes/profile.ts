@@ -4,11 +4,7 @@ import { prisma } from "../lib/prisma";
 import { StatusCodes } from "http-status-codes";
 import { validate, ValidationType } from "../middlewares/middleware";
 import { onBoardingSchema, idSchema, profileSchema } from "../lib/validations";
-import {
-  TypedRequest,
-  TypedRequestBody,
-  TypedRequestParams,
-} from "zod-express-middleware";
+import { TypedRequest, TypedRequestBody } from "zod-express-middleware";
 import { ZodAny } from "zod";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 
@@ -115,29 +111,6 @@ router.patch(
             .json({ message: "User to update does not exist" });
         }
       }
-      res
-        .status(StatusCodes.INTERNAL_SERVER_ERROR)
-        .json({ message: "Internal server error" });
-    }
-  },
-);
-
-//WE DO NOT USE, THIS CAN BE DELETED!
-//return user profile including onboarding data:journey/ambitons/tech
-router.get(
-  "/:id",
-  validate(idSchema, ValidationType.PARAMS),
-  async (req: TypedRequestParams<typeof idSchema>, res: Response) => {
-    const id = req.params.id;
-    try {
-      const user = await prisma.profile.findUnique({
-        where: {
-          userId: id,
-        },
-      });
-      return res.status(StatusCodes.OK).json(user);
-    } catch (error) {
-      console.error(error);
       res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
         .json({ message: "Internal server error" });
