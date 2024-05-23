@@ -39,7 +39,7 @@ router.get(
       if (!post) {
         return res
           .status(StatusCodes.NOT_FOUND)
-          .send("No post with that ID found");
+          .json({ message: "No post with that ID found" });
       }
       return res.status(StatusCodes.OK).json(post);
     } catch (error) {
