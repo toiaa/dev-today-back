@@ -249,7 +249,7 @@ router.post(
 
 //unfollow a user
 router.post(
-  "/:id/follow",
+  "/:id/unfollow",
   validate(idSchema, ValidationType.PARAMS),
   validate(followViewerIdSchema, ValidationType.QUERY),
   async (
@@ -259,34 +259,33 @@ router.post(
     const followerId = req.query.viewerId;
     const followingId = req.params.id;
     try {
-      // Check if the user is trying to follow themselves
+      // Check if the user is trying to unfollow themselves
       if (followerId === followingId) {
         return res
           .status(StatusCodes.CONFLICT)
-          .json({ message: "You cannot follow yourself" });
+          .json({ message: "You cannot unfollow yourself" });
       }
 
-      // Create a new follow relation
-      const newFollow = await prisma.follow.create({
-        data: {
-          follower: { connect: { id: followerId } },
-          following: { connect: { id: followingId } },
+      // delete follow relation
+      await prisma.follow.delete({
+        where: {
+          followerId_followingId: {
+            followerId,
+            followingId,
+          },
         },
       });
 
-      return res.status(StatusCodes.OK).json(newFollow);
+      return res
+        .status(StatusCodes.OK)
+        .json({ messsage: "You are now not following this user" });
     } catch (error) {
       console.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
         if (error.code === "P2025") {
           return res
             .status(StatusCodes.NOT_FOUND)
-            .json({ message: "One or more Ids do not exist" });
-        }
-        if (error.code === "P2002") {
-          return res
-            .status(StatusCodes.NOT_FOUND)
-            .json({ message: "You are already following this user" });
+            .json({ message: "You are not following this user" });
         }
       }
       res
