@@ -88,7 +88,8 @@ router.get(
       );
 
       const userCopy = { ...user, userIsFollowed };
-      // delete userCopy?.followers;
+
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { followers, ...userWithoutFollowers } = userCopy;
 
       return res.status(StatusCodes.OK).json(userWithoutFollowers);
