@@ -6,6 +6,7 @@
 
 generator client {
   provider = "prisma-client-js"
+  previewFeatures = ["omitApi"]
 }
 
 datasource db {
@@ -20,15 +21,34 @@ model User {
   password  String
   username  String      @unique
   image     String?
-  profile   Profile?
+  profile    Profile?
   posts     Post[] // one to many relation (the user can have many posts) - this references the post model
   comments  Comment[]
-  Like      Like[]
+  likes     Like[]
   groupUser GroupUser[]
   following Follow[]    @relation("follower")
   followers Follow[]    @relation("following")
 
   @@index([email])
+}
+
+model Profile {
+  onBoardingCompleted Boolean  @default(false)
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId              String   @id
+  name                String?
+  journey             String?
+  ambitions           String[]
+  tech                String[]
+  bio                 String?
+  githubLink          String?
+  githubHandle        String?
+  linkedinLink        String?
+  linkedinHandle      String?
+  xProfileLink         String?
+  xProfileHandle       String?
+  instagramLink       String?
+  instagramHandle     String?
 }
 
 model Follow {
@@ -40,21 +60,12 @@ model Follow {
   @@id([followerId, followingId])
 }
 
-model Profile {
-  onBoardingCompleted Boolean  @default(false)
-  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId              String   @id
-  journey             String?
-  ambitions           String[]
-  tech                String[]
-}
-
 model Post {
   id        String    @id @default(uuid())
   author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade) // one to many (the post can have only one user or author) - this references the user model
   authorId  String
   title     String
-  type      String    @default("STANDARD")
+  type      PostType  @default(STANDARD)
   createdAt DateTime  @default(now())
   meetDate  DateTime?
   location  String?
@@ -70,19 +81,19 @@ model Post {
 }
 
 model Like {
-  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  authorId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
   post     Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
   postId   String
 
-  @@id([authorId, postId])
+  @@id([userId, postId])
 }
 
 //intermediary table to link posts to tags
 
 model Tag {
   id   String @id @default(uuid())
-  name String
+  name String @unique
   post Post[]
 }
 
@@ -99,12 +110,12 @@ model Comment {
 model Group {
   id           String      @id @default(uuid())
   name         String
-  profileImage String
+  profileImage  String
   coverImage   String?
   bio          String?
   posts        Post[] // one to many relation (the group can have many posts) - this references the post model
   createdAt    DateTime    @default(now())
-  GroupUser    GroupUser[]
+  groupUser    GroupUser[]
   active       Boolean     @default(true)
 }
 

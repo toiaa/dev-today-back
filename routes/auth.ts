@@ -1,30 +1,32 @@
-import { Router, Request, Response } from "express";
-const bcrypt = require("bcrypt");
-const { prisma } = require("../db");
+import { Router, Response } from "express";
+import bcrypt from "bcrypt";
+import { prisma } from "../lib/prisma";
+import { validate, ValidationType } from "../middlewares/middleware";
+import { StatusCodes } from "http-status-codes";
+import {
+  emailSchema,
+  userLoginSchema,
+  userRegisterSchema,
+} from "../lib/validations";
+import { TypedRequestBody } from "zod-express-middleware";
+import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
+
 const router = Router();
-const { validate } = require("../middlewares/authMiddleware.ts");
-const { StatusCodes } = require("http-status-codes");
 const saltRounds = 10;
 const saltRoundsRandom = bcrypt.genSaltSync(saltRounds);
-const {
-  userRegisterchema,
-  userLoginSchema,
-} = require("../zodSchemas/authSchemas");
 
+//register a new user
 router.post(
   "/register",
-  validate(userRegisterchema),
-  async (req: Request, res: Response) => {
-    const requestBody = req.body;
+  validate(userRegisterSchema, ValidationType.BODY),
+  async (req: TypedRequestBody<typeof userRegisterSchema>, res: Response) => {
+    const { username, email, password } = req.body;
     try {
-      const hashedPassword = bcrypt.hashSync(
-        requestBody.password,
-        saltRoundsRandom,
-      );
-      const newUser = await prisma.user.create({
+      const hashedPassword = bcrypt.hashSync(password, saltRoundsRandom);
+      await prisma.user.create({
         data: {
-          username: requestBody.username,
-          email: requestBody.email.toLowerCase(),
+          username,
+          email: email.toLowerCase(),
           password: hashedPassword,
           profile: {
             create: {
@@ -33,14 +35,16 @@ router.post(
           },
         },
       });
-      res.status(StatusCodes.CREATED).json(newUser);
-    } catch (error: any) {
-      console.error(error);
-      if (error.code === "P2002") {
-        console.error("Error", "Email already exists");
-        return res
-          .status(StatusCodes.BAD_REQUEST)
-          .json({ message: "Error user already exists" });
+      res
+        .status(StatusCodes.CREATED)
+        .json({ message: "User created successfully" });
+    } catch (error) {
+      if (error instanceof PrismaClientKnownRequestError) {
+        if (error.code === "P2002") {
+          return res
+            .status(StatusCodes.CONFLICT)
+            .json({ message: "Error user already exists" });
+        }
       }
       res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
@@ -49,23 +53,25 @@ router.post(
   },
 );
 
+//login with email address and password
 router.post(
   "/login",
-  validate(userLoginSchema),
-  async (req: Request, res: Response) => {
-    const requestBody = req.body;
-
+  validate(userLoginSchema, ValidationType.BODY),
+  async (req: TypedRequestBody<typeof userLoginSchema>, res: Response) => {
+    const { email, password } = req.body;
     try {
       const userFound = await prisma.user.findUnique({
         where: {
-          email: requestBody.email,
+          email,
         },
       });
       if (!userFound) {
-        return res.status(StatusCodes.BAD_REQUEST).json(userFound);
+        return res
+          .status(StatusCodes.BAD_REQUEST)
+          .json({ message: "No user found" });
       }
-      const isAuthenticated = await bcrypt.compareSync(
-        requestBody.password,
+      const isAuthenticated = await bcrypt.compare(
+        password,
         userFound.password,
       );
       if (!isAuthenticated) {
@@ -73,48 +79,35 @@ router.post(
           .status(StatusCodes.BAD_REQUEST)
           .json({ message: "Incorrect email or password" });
       }
-      res.status(200).json(userFound);
+      res.status(StatusCodes.OK).json(userFound);
     } catch (error) {
-      res.status(500).json({ message: "Internal server error" });
+      res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .json({ message: "Internal server error" });
     }
   },
 );
 
-router.post("/user", async (req: Request, res: Response) => {
-  const requestBody = req.body;
-  try {
-    const userFound = await prisma.user.findUnique({
-      where: {
-        email: requestBody.email,
-      },
-      include: {
-        profile: true,
-      },
-    });
-    res.status(StatusCodes.OK).json(userFound);
-  } catch (error) {
-    console.error(error);
-    res.status(StatusCodes.OK).json({ message: "User not found" });
-  }
-});
+//returns user information including profile data  USING THIS FOR OUR SESSION!!
+router.post(
+  "/user",
+  validate(emailSchema, ValidationType.BODY),
+  async (req: TypedRequestBody<typeof emailSchema>, res: Response) => {
+    try {
+      const userFound = await prisma.user.findUnique({
+        where: {
+          email: req.body.email,
+        },
+        include: {
+          profile: true,
+        },
+      });
+      res.status(StatusCodes.OK).json(userFound);
+    } catch (error) {
+      console.error(error);
+      res.status(StatusCodes.OK).json({ message: "User not found" });
+    }
+  },
+);
 
-router.get("/:id", async (req: Request, res: Response) => {
-  const id = req.params.id;
-  if (!id) return res.status(StatusCodes.BAD_REQUEST).send("No user id");
-  try {
-    const userFound = await prisma.user.findUnique({
-      where: {
-        id,
-      },
-      include: {
-        profile: true,
-      },
-    });
-    res.status(200).json(userFound);
-  } catch (error) {
-    console.error(error);
-    res.status(StatusCodes.OK).json({ message: "User not found" });
-  }
-});
-
-module.exports = router;
+export default router;
