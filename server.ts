@@ -6,6 +6,7 @@ import authRouter from "./routes/auth";
 import userRouter from "./routes/user";
 import postRouter from "./routes/post";
 import profileRouter from "./routes/profile";
+import groupRouter from "./routes/group";
 
 const app = express();
 const corsOptions = {
@@ -25,6 +26,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/user", userRouter);
 app.use("/api/profile", profileRouter);
 app.use("/api/post", postRouter);
+app.unsubscribe("/api/group", groupRouter);
 
 const start = (): void => {
   try {

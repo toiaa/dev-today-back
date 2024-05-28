@@ -5,7 +5,7 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
   previewFeatures = ["omitApi"]
 }
 
@@ -21,7 +21,7 @@ model User {
   password  String
   username  String      @unique
   image     String?
-  profile    Profile?
+  profile   Profile?
   posts     Post[] // one to many relation (the user can have many posts) - this references the post model
   comments  Comment[]
   likes     Like[]
@@ -45,8 +45,8 @@ model Profile {
   githubHandle        String?
   linkedinLink        String?
   linkedinHandle      String?
-  xProfileLink         String?
-  xProfileHandle       String?
+  xProfileLink        String?
+  xProfileHandle      String?
   instagramLink       String?
   instagramHandle     String?
 }
@@ -83,8 +83,8 @@ model Post {
 model Like {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId String
-  post     Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
-  postId   String
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId String
 
   @@id([userId, postId])
 }
@@ -110,7 +110,7 @@ model Comment {
 model Group {
   id           String      @id @default(uuid())
   name         String
-  profileImage  String
+  profileImage String
   coverImage   String?
   bio          String?
   posts        Post[] // one to many relation (the group can have many posts) - this references the post model
@@ -126,7 +126,7 @@ model GroupUser {
   group     Group   @relation(fields: [groupId], references: [id], onDelete: Cascade)
   groupId   String
   isAdmin   Boolean @default(false)
-  active    Boolean @default(false)
+  active    Boolean @default(true)
   isCreator Boolean @default(false)
 }
 
