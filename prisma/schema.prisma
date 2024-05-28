@@ -128,6 +128,8 @@ model GroupUser {
   isAdmin   Boolean @default(false)
   active    Boolean @default(true)
   isCreator Boolean @default(false)
+
+  @@unique([userId, groupId])
 }
 
 enum PostType {

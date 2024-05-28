@@ -26,7 +26,7 @@ app.use("/api/auth", authRouter);
 app.use("/api/user", userRouter);
 app.use("/api/profile", profileRouter);
 app.use("/api/post", postRouter);
-app.unsubscribe("/api/group", groupRouter);
+app.use("/api/group", groupRouter);
 
 const start = (): void => {
   try {

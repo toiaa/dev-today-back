@@ -118,6 +118,21 @@ export const groupSchema = z.object({
     message: "Not a valid ID",
   }),
 });
+export const editGroupSchema = z.object({
+  name: z
+    .string()
+    .min(4, { message: "must be at least 4 characters long." })
+    .optional(),
+  bio: z
+    .string()
+    .min(10, { message: "must be at least 10 characters long." })
+    .optional(),
+  profileImage: z.string().optional(),
+  coverImage: z.string().optional(),
+  userId: z.string({ required_error: "is required" }).length(36, {
+    message: "Not a valid ID",
+  }),
+});
 
 export const userGroupQuery = z.object({
   page: z.string().optional(),
@@ -140,5 +155,10 @@ export const groupUserSchema = z.object({
 });
 
 export const membersSchema = z.object({
-  members: z.array(z.object({ userId: z.string(), isAdmin: z.boolean() })),
+  members: z.array(
+    z.object({
+      userId: z.string(),
+      isAdmin: z.boolean().optional(),
+    }),
+  ),
 });

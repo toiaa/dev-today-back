@@ -6,6 +6,7 @@ import { TypedRequest, TypedRequestParams } from "zod-express-middleware";
 import { ZodAny } from "zod";
 
 import {
+  editGroupSchema,
   groupSchema,
   groupUserSchema,
   idSchema,
@@ -13,16 +14,14 @@ import {
 } from "../lib/validations";
 const router = Router();
 
-// CREATE GROUP with the user id as a param
 router.post(
-  "/create/:id",
+  "/create",
   validate(groupSchema, ValidationType.BODY),
   async (
     req: TypedRequest<typeof idSchema, typeof groupSchema, ZodAny>,
     res: Response,
   ) => {
-    const { name, bio, profileImage, coverImage } = req.body;
-    const userId = req.params.id;
+    const { name, bio, profileImage, coverImage, userId } = req.body;
     try {
       const group = await prisma.group.create({
         data: {
@@ -39,7 +38,7 @@ router.post(
           },
         },
       });
-      return res.status(StatusCodes.OK).json({ id: group.id });
+      return res.status(StatusCodes.OK).json(group);
     } catch (error) {
       console.error(error);
       return res
@@ -49,7 +48,7 @@ router.post(
   },
 );
 
-// ADD MEMBERS TO A GROUP , with group id as a param, will be after pressing the create group button and then we will add the members ????
+// ADD MEMBERS TO A GROUP , with group id as a param, will be after pressing the create group button and then we will add the members ???? // 	"id": "881e1c4e-1463-49d6-912c-a11f82c58985",
 router.post(
   "/members/:id",
   validate(idSchema, ValidationType.PARAMS),
@@ -61,14 +60,25 @@ router.post(
     const groupId = req.params.id;
     const { members } = req.body;
     try {
-      const group = await prisma.groupUser.create({
+      const groupFound = await prisma.group.findUnique({
+        where: { id: groupId },
+        include: { groupUser: true },
+      });
+      if (!groupFound) {
+        return res
+          .status(StatusCodes.NOT_FOUND)
+          .json({ message: "Group not found" });
+      }
+      // need to check here if the person adding is an admin or creator ??
+
+      const createdMembers = await prisma.groupUser.createMany({
         data: members.map((member: any) => ({
           userId: member.userId,
           groupId,
           isAdmin: member.isAdmin,
         })),
       });
-      return res.status(StatusCodes.OK).json({ id: group.id });
+      return res.status(StatusCodes.OK).json(createdMembers);
     } catch (error) {
       console.error(error);
       return res
@@ -168,7 +178,7 @@ router.get(
   },
 );
 
-// GET SPECIFIC GROUP
+// GET SPECIFIC GROUP 	"id": "881e1c4e-1463-49d6-912c-a11f82c58985",
 // ask if i have to do other routes for the members, i did built one
 
 router.get(
@@ -179,7 +189,7 @@ router.get(
     try {
       const group = await prisma.group.findUnique({
         where: { id },
-        //      include: { groupUser: true }, only if i need the members and i will have to do it with pagination
+        include: { groupUser: true }, // only if i need the members and i will have to do it with pagination
       });
       if (group) {
         return res.status(StatusCodes.OK).json(group);
@@ -194,17 +204,30 @@ router.get(
 );
 
 // EDIT GROUP INFO route (not members and admins)
+// i need to check if the person editing is an admin or creator
 router.patch(
   "/:id",
   validate(idSchema, ValidationType.PARAMS),
-  validate(groupSchema, ValidationType.BODY),
+  validate(editGroupSchema, ValidationType.BODY),
   async (
     req: TypedRequest<typeof idSchema, typeof groupSchema, ZodAny>,
     res: Response,
   ) => {
     const id = req.params.id;
-    const { name, bio, profileImage, coverImage } = req.body;
+    const { name, bio, profileImage, coverImage, userId } = req.body;
     try {
+      const groupFound = await prisma.group.findUnique({
+        where: { id },
+        include: { groupUser: true },
+      });
+
+      if (groupFound?.groupUser[0].userId !== userId) {
+        // or if find a user with the id and check if it is an admin or creator ??
+        return res
+          .status(StatusCodes.UNAUTHORIZED)
+          .json({ error: "You are not authorized to edit this group" });
+      }
+
       const groupUpdate = await prisma.group.update({
         where: { id },
         data: {
@@ -228,7 +251,6 @@ router.patch(
 );
 
 // JOIN GROUP route
-
 // ask mateo : here i would need to ask if there is a way to stop users from joining a group if they are already in it or add a constraint in the model
 // AND or id ANYONE can join or certain users,
 
