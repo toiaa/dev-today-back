@@ -67,9 +67,9 @@ router.get(
       const group = await prisma.group.findUnique({
         where: { id },
         include: {
-          groupUser: true,
+          creator: true,
         },
-      }); // add include to add the users information that created the group
+      });
       if (group) {
         return res.status(StatusCodes.OK).json(group);
       }
@@ -84,8 +84,6 @@ router.get(
   },
 );
 
-// GET ADMINS pagination 5 only one for ALL MEMBERS
-
 router.get(
   "/:id/admins",
   validate(idSchema, ValidationType.PARAMS),
@@ -99,8 +97,8 @@ router.get(
     const page = req.query.page ? parseInt(req.query.page) : 1;
     try {
       const skip = (page - 1) * pageSize;
-      const admins = await prisma.groupUser.findMany({
-        where: { groupId, isAdmin: true },
+      const members = await prisma.groupUser.findMany({
+        where: { groupId },
         include: {
           user: {
             select: {
@@ -113,9 +111,9 @@ router.get(
         skip,
         take: pageSize,
       });
-      console.log(admins); // i want to check but dont have enough admins or users
-      if (admins) {
-        return res.status(StatusCodes.OK).json(admins);
+
+      if (members) {
+        return res.status(StatusCodes.OK).json(members);
       }
     } catch (error) {
       console.error(error);
