@@ -143,6 +143,8 @@ export const editGroupSchema = z.object({
 
 export const userGroupQuery = z.object({
   page: z.string().optional(),
+  search: z.string().optional(),
+  size: z.string().optional(),
 });
 
 export const updateGroupSchema = z.object({
@@ -175,12 +177,6 @@ export const groupMembersQuery = z.object({
 });
 
 export const joinGroupSchema = z.object({
-  newMember: z.object({
-    memberId: z.string({ required_error: "is required" }).length(36, {
-      message: "Not a valid ID",
-    }),
-    isAdmin: z.boolean(),
-  }),
   userId: z.string({ required_error: "is required" }).length(36, {
     message: "Not a valid ID",
   }),

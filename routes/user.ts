@@ -175,42 +175,65 @@ router.get(
     res: Response,
   ) => {
     const id = req.params.id;
-
+    const search = req.query.search; // keep working here to add search functionality
+    const pageSize = req.query.size ? Number(req.query.size) : 5;
     const page = req.query.page ? parseInt(req.query.page) : 1;
-    const pageSize = 5; // Number of posts per page
+
     try {
       const skip = (page - 1) * pageSize;
-      const userGroups = await prisma.group.findMany({
-        where: {
-          groupUser: {
-            some: {
-              userId: id,
-            },
-          },
-        },
-        select: {
-          name: true,
-          coverImage: true,
-          bio: true,
-          groupUser: {
-            take: 4,
-            include: {
-              user: {
-                select: {
-                  image: true,
-                },
+
+      if (!search) {
+        const userGroups = await prisma.group.findMany({
+          where: {
+            groupUser: {
+              some: {
+                userId: id,
               },
             },
           },
-          _count: {
-            select: { groupUser: true },
+          select: {
+            name: true,
+            coverImage: true,
+            bio: true,
+            groupUser: {
+              take: 4,
+              include: {
+                user: {
+                  select: {
+                    image: true,
+                  },
+                },
+              },
+            },
+            _count: {
+              select: { groupUser: true },
+            },
           },
-        },
-        skip,
-        take: pageSize,
-      });
+          skip,
+          take: pageSize,
+        });
+        return res.status(StatusCodes.OK).json(userGroups);
+      }
 
-      return res.status(StatusCodes.OK).json(userGroups);
+      if (search) {
+        const userGroups = await prisma.group.findMany({
+          take: pageSize,
+          where: {
+            OR: [
+              {
+                name: {
+                  contains: search,
+                },
+              },
+              { name: { contains: search } },
+            ],
+          },
+          orderBy: {
+            id: "desc",
+          },
+        });
+        return res.status(StatusCodes.OK).json(userGroups);
+      }
     } catch (error) {
       res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)

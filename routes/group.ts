@@ -30,11 +30,11 @@ router.post(
     try {
       const group = await prisma.group.create({
         data: {
-          name,
-          bio,
+          name: name.toLowerCase(),
+          bio: bio.toLowerCase(),
           profileImage: profileImage || "",
           coverImage,
-          creatorId, // what about the creators name?
+          creatorId,
           groupUser: {
             create: [
               {
@@ -46,6 +46,7 @@ router.post(
           },
         },
       });
+
       return res.status(StatusCodes.OK).json(group);
     } catch (error) {
       console.error(error);
@@ -65,19 +66,26 @@ router.get(
     try {
       const group = await prisma.group.findUnique({
         where: { id },
-      });
+        include: {
+          groupUser: true,
+        },
+      }); // add include to add the users information that created the group
       if (group) {
         return res.status(StatusCodes.OK).json(group);
       }
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json({ message: "Group not found" });
     } catch (error) {
-      console.error(error);
       return res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
         .json({ error: "Internal Server Error" });
     }
   },
 );
-// GET ADMINS pagination 5
+
+// GET ADMINS pagination 5 only one for ALL MEMBERS
+
 router.get(
   "/:id/admins",
   validate(idSchema, ValidationType.PARAMS),
@@ -91,7 +99,6 @@ router.get(
     const page = req.query.page ? parseInt(req.query.page) : 1;
     try {
       const skip = (page - 1) * pageSize;
-
       const admins = await prisma.groupUser.findMany({
         where: { groupId, isAdmin: true },
         include: {
@@ -118,45 +125,7 @@ router.get(
     }
   },
 );
-// GET MEMBERS pagination 10
-router.get(
-  "/:id/members",
-  validate(idSchema, ValidationType.PARAMS),
-  validate(groupMembersQuery, ValidationType.QUERY),
-  async (
-    req: TypedRequest<typeof idSchema, typeof groupMembersQuery, ZodAny>,
-    res: Response,
-  ) => {
-    const groupId = req.params.id;
-    const pageSize = 10;
-    const page = req.query.page ? parseInt(req.query.page) : 1;
-    try {
-      const skip = (page - 1) * pageSize;
-      const members = await prisma.groupUser.findMany({
-        where: { groupId },
-        include: {
-          user: {
-            select: {
-              id: true,
-              image: true,
-              profile: true,
-            },
-          },
-        },
-        skip,
-        take: pageSize,
-      });
-      if (members) {
-        return res.status(StatusCodes.OK).json(members);
-      }
-    } catch (error) {
-      console.error(error);
-      return res
-        .status(StatusCodes.INTERNAL_SERVER_ERROR)
-        .json({ error: "Internal Server Error" });
-    }
-  },
-);
+
 // ADD ADMINS, GROUP MEMBERS will become admins
 router.patch(
   "/:id/add-admin",
@@ -170,12 +139,10 @@ router.patch(
     const { memberId, creatorId } = req.body;
     try {
       const group = await prisma.group.findUnique({
-        where: { id: groupId, creatorId },
-        include: { groupUser: true },
+        where: { id: groupId },
       });
 
       if (group?.creatorId !== creatorId) {
-        // is this necesary since im searching for the group that the user created ?????
         return res
           .status(StatusCodes.FORBIDDEN)
           .json({ message: "You are not allowed to add admins" });
@@ -186,8 +153,11 @@ router.patch(
         data: { isAdmin: true },
       });
 
-      console.log(groupUser);
-
+      if (!groupUser) {
+        return res
+          .status(StatusCodes.NOT_FOUND)
+          .json({ message: "User wasn't found" });
+      }
       return res.status(StatusCodes.OK).json({ user: groupUser });
     } catch (error) {
       console.error(error);
@@ -197,7 +167,9 @@ router.patch(
     }
   },
 );
-// EDIT GROUP (not members and admins only group info)
+// REMOVE ADMIN
+
+// EDIT GROUP (not modify members and admins only modify group info)
 router.patch(
   "/:id",
   validate(idSchema, ValidationType.PARAMS),
@@ -210,12 +182,10 @@ router.patch(
     const { name, bio, profileImage, coverImage, userId } = req.body;
     try {
       const group = await prisma.group.findUnique({
-        where: { id: groupId, creatorId: userId },
-        include: { groupUser: true },
+        where: { id: groupId },
       });
 
       if (group?.creatorId !== userId) {
-        // is this necesary? im already searching for the group that the user created ?????
         return res
           .status(StatusCodes.FORBIDDEN)
           .json({ message: "You are not allowed to edit the group" });
@@ -245,45 +215,23 @@ router.post(
   "/:id/join",
   validate(idSchema, ValidationType.PARAMS),
   validate(joinGroupSchema, ValidationType.BODY),
-  async (req: any, res: Response) => {
+  async (
+    req: TypedRequest<typeof idSchema, ZodAny, typeof joinGroupSchema>,
+    res: Response,
+  ) => {
     const groupId = req.params.id;
-    const userId = req.body.adminId;
-    const newMember = req.body.newMember;
-    const { memberId, isAdmin } = newMember;
+    const userId = req.body.userId;
+
     try {
-      if (userId === memberId) {
-        const relationCreated = await prisma.groupUser.create({
-          data: {
-            userId: userId,
-            groupId: groupId,
-          },
-        });
-        console.log(relationCreated);
-      } else {
-        const groupAdmin = await prisma.group.findUnique({
-          where: { id: groupId },
-          include: {
-            groupUser: { where: { userId: memberId, isAdmin } },
-          }, // enough to validate ???
-        });
-
-        if (!groupAdmin) {
-          return res
-            .status(StatusCodes.NOT_FOUND)
-            .json({ message: "Not allowed to add members" });
-        }
-        const relationCreated = await prisma.groupUser.create({
-          data: {
-            userId: userId,
-            groupId: groupId,
-          },
-        });
-        console.log(relationCreated);
-      }
-
+      const NEWMEMBER = await prisma.groupUser.create({
+        data: {
+          userId: userId,
+          groupId: groupId,
+        },
+      });
+      console.log(NEWMEMBER);
       return res.status(StatusCodes.OK).json({ message: "User joined group" });
     } catch (error) {
-      console.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
         if (error.code === "P2002") {
           return res
@@ -298,7 +246,7 @@ router.post(
   },
 );
 
-// delete user from group
+// delete user from group // leave group only route , delete group only admins can do it : need a different route
 router.delete(
   "/:id/leave",
   validate(idSchema, ValidationType.PARAMS),
@@ -359,53 +307,36 @@ router.delete(
 
 // delete group:
 router.delete(
-  ":/id",
+  "/:id",
   validate(idSchema, ValidationType.PARAMS),
   validate(idSchema, ValidationType.BODY),
-  async (req: TypedRequest<typeof idSchema, typeof idSchema, ZodAny>, res) => {
+  async (
+    req: TypedRequest<typeof idSchema, ZodAny, typeof idSchema>,
+    res: Response,
+  ) => {
     const groupId = req.params.id;
-    const creatorId = req.body.creatorId;
+    const creatorId = req.body.id;
     try {
       const group = await prisma.group.findUnique({
-        where: { creatorId, id: groupId },
-      }); // enough to validate ???
+        where: { id: groupId },
+      });
 
       if (!group) {
         return res
-          .status(StatusCodes.FORBIDDEN)
-          .json({ message: " Not Allowed " });
+          .status(StatusCodes.NOT_FOUND)
+          .json({ message: "Group does not exist" });
       }
-
-      const groupDeleted = await prisma.group.delete({
-        where: { id: groupId },
-      });
-      console.log("this group was deleted", groupDeleted);
+      if (group.creatorId === creatorId) {
+        const groupDeleted = await prisma.group.delete({
+          where: { id: groupId },
+        });
+        console.log("This group was deleted", groupDeleted);
+      } else {
+        return res
+          .status(StatusCodes.FORBIDDEN)
+          .json({ message: "Not Allowed" });
+      }
       return res.status(StatusCodes.OK).json(group);
-    } catch (error) {
-      console.error(error);
-      return res
-        .status(StatusCodes.INTERNAL_SERVER_ERROR)
-        .json({ message: "Internal server error" });
-    }
-  },
-);
-// return all groups the user is in (names in a string array)
-router.get(
-  "/user/:id",
-  validate(idSchema, ValidationType.PARAMS),
-  async (req: TypedRequestParams<typeof idSchema>, res: Response) => {
-    const userId = req.params.id;
-    try {
-      const groups = await prisma.groupUser.findMany({
-        where: { userId },
-        include: {
-          group: true,
-        },
-      });
-
-      const groupIds = groups.map((data) => data.group.name); // return names? or return each group in an array
-
-      return res.status(StatusCodes.OK).json(groupIds);
     } catch (error) {
       console.error(error);
       return res
@@ -416,4 +347,3 @@ router.get(
 );
 
 export default router;
-// check if error is a prisma error: check MJS code
