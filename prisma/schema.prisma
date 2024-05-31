@@ -90,8 +90,6 @@ model Like {
   @@id([userId, postId])
 }
 
-//intermediary table to link posts to tags
-
 model Tag {
   id   String @id @default(uuid())
   name String @unique
@@ -119,6 +117,8 @@ model Group {
   groupUser    GroupUser[]
   creatorId    String
   creator      User        @relation(fields: [creatorId], references: [id])
+
+  @@unique([name, creatorId])
 }
 
 model GroupUser {

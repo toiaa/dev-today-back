@@ -16,6 +16,8 @@ import {
   idSchema,
   groupMembersQuery,
   joinGroupSchema,
+  removeMemberSchema,
+  leaveGroupSchema,
 } from "../lib/validations";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 
@@ -49,7 +51,13 @@ router.post(
 
       return res.status(StatusCodes.OK).json(group);
     } catch (error) {
-      console.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        if (error.code === "P2002") {
+          return res
+            .status(StatusCodes.CONFLICT)
+            .json({ message: "Group already exists" });
+        }
+      }
       return res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
         .json({ message: "Internal server error" });
@@ -57,7 +65,7 @@ router.post(
   },
 );
 
-// GET GROUP INFO route
+// GET GROUP INFO
 router.get(
   "/:id",
   validate(idSchema, ValidationType.PARAMS),
@@ -68,6 +76,7 @@ router.get(
         where: { id },
         include: {
           creator: true,
+          groupUser: true,
         },
       });
       if (group) {
@@ -115,6 +124,9 @@ router.get(
       if (members) {
         return res.status(StatusCodes.OK).json(members);
       }
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json({ message: "No members yet" });
     } catch (error) {
       console.error(error);
       return res
@@ -130,7 +142,7 @@ router.patch(
   validate(idSchema, ValidationType.PARAMS),
   validate(adminUserSchema, ValidationType.BODY),
   async (
-    req: TypedRequest<typeof idSchema, typeof adminUserSchema, ZodAny>,
+    req: TypedRequest<typeof idSchema, ZodAny, typeof adminUserSchema>,
     res: Response,
   ) => {
     const groupId = req.params.id;
@@ -165,15 +177,56 @@ router.patch(
     }
   },
 );
-// REMOVE ADMIN
 
-// EDIT GROUP (not modify members and admins only modify group info)
+// REMOVE ADMIN
+router.patch(
+  "/:id/remove-admin",
+  validate(idSchema, ValidationType.PARAMS),
+  validate(adminUserSchema, ValidationType.BODY),
+  async (
+    req: TypedRequest<typeof idSchema, ZodAny, typeof adminUserSchema>,
+    res: Response,
+  ) => {
+    const groupId = req.params.id;
+    const { memberId, creatorId } = req.body;
+    try {
+      const group = await prisma.group.findUnique({
+        where: { id: groupId },
+      });
+
+      if (group?.creatorId !== creatorId) {
+        return res
+          .status(StatusCodes.FORBIDDEN)
+          .json({ message: "You are not allowed to remove admins" });
+      }
+
+      const groupUser = await prisma.groupUser.update({
+        where: { userId_groupId: { userId: memberId, groupId } },
+        data: { isAdmin: false },
+      });
+
+      if (!groupUser) {
+        return res
+          .status(StatusCodes.NOT_FOUND)
+          .json({ message: "User wasn't found" });
+      }
+      return res.status(StatusCodes.OK).json({ user: groupUser });
+    } catch (error) {
+      console.error(error);
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .json({ message: "Internal server error" });
+    }
+  },
+);
+
+// EDIT GROUP
 router.patch(
   "/:id",
   validate(idSchema, ValidationType.PARAMS),
   validate(editGroupSchema, ValidationType.BODY),
   async (
-    req: TypedRequest<typeof idSchema, typeof editGroupSchema, ZodAny>,
+    req: TypedRequest<typeof idSchema, ZodAny, typeof editGroupSchema>,
     res: Response,
   ) => {
     const groupId = req.params.id;
@@ -209,6 +262,7 @@ router.patch(
   },
 );
 
+//JOIN GROUP
 router.post(
   "/:id/join",
   validate(idSchema, ValidationType.PARAMS),
@@ -221,15 +275,16 @@ router.post(
     const userId = req.body.userId;
 
     try {
-      const NEWMEMBER = await prisma.groupUser.create({
+      const newMember = await prisma.groupUser.create({
         data: {
           userId: userId,
           groupId: groupId,
         },
       });
-      console.log(NEWMEMBER);
-      return res.status(StatusCodes.OK).json({ message: "User joined group" });
+      console.log(newMember);
+      return res.status(StatusCodes.OK).json({ message: "You joined group" });
     } catch (error) {
+      console.log(error);
       if (error instanceof PrismaClientKnownRequestError) {
         if (error.code === "P2002") {
           return res
@@ -244,56 +299,35 @@ router.post(
   },
 );
 
-// delete user from group // leave group only route , delete group only admins can do it : need a different route
+// LEAVE GROUP
 router.delete(
   "/:id/leave",
   validate(idSchema, ValidationType.PARAMS),
-  validate(joinGroupSchema, ValidationType.BODY),
-  async (req: any, res: Response) => {
+  validate(leaveGroupSchema, ValidationType.BODY),
+  async (
+    req: TypedRequest<typeof idSchema, ZodAny, typeof leaveGroupSchema>,
+    res: Response,
+  ) => {
     const groupId = req.params.id;
-    const userId = req.body.adminId;
-    const newMember = req.body.newMember;
-    const { memberId, isAdmin } = newMember;
+    const userId = req.body.userId;
     try {
-      if (userId === memberId) {
-        await prisma.groupUser.delete({
-          where: {
-            userId_groupId: {
-              groupId: groupId,
-              userId: userId,
-            },
+      await prisma.groupUser.delete({
+        where: {
+          userId_groupId: {
+            groupId: groupId,
+            userId: userId,
           },
-        }); // enough to validate ???
-      } else {
-        const groupAdmin = await prisma.group.findUnique({
-          where: { id: groupId },
-          include: {
-            groupUser: { where: { userId: memberId, isAdmin: true } },
-          },
-        });
+        },
+      });
 
-        if (!groupAdmin) {
-          return res
-            .status(StatusCodes.NOT_FOUND)
-            .json({ message: "Not allowed to add members" });
-        }
-        await prisma.groupUser.delete({
-          where: {
-            userId_groupId: {
-              groupId: groupId,
-              userId: memberId,
-            },
-          },
-        });
-      }
-      return res.status(StatusCodes.OK).json({ message: "User joined group" });
+      return res.status(StatusCodes.OK).json({ message: "You left the group" });
     } catch (error) {
       console.error(error);
       if (error instanceof PrismaClientKnownRequestError) {
         if (error.code === "P2025") {
           return res
             .status(StatusCodes.NOT_FOUND)
-            .json({ message: "Group does not exist" });
+            .json({ message: "Not in the group" });
         }
       }
       return res
@@ -303,7 +337,56 @@ router.delete(
   },
 );
 
-// delete group:
+// REMOVE USER
+router.delete(
+  "/:id/remove",
+  validate(idSchema, ValidationType.PARAMS),
+  validate(removeMemberSchema, ValidationType.BODY),
+  async (
+    req: TypedRequest<typeof idSchema, ZodAny, typeof removeMemberSchema>,
+    res: Response,
+  ) => {
+    const groupId = req.params.id;
+    const memberId = req.body.memberId;
+    const adminId = req.body.adminId;
+    try {
+      const group = await prisma.group.findUnique({
+        where: { id: groupId },
+      });
+
+      if (group?.creatorId !== adminId) {
+        return res
+          .status(StatusCodes.FORBIDDEN)
+          .json({ message: "You are not allowed to remove members" });
+      }
+
+      await prisma.groupUser.delete({
+        where: {
+          userId_groupId: {
+            groupId: groupId,
+            userId: memberId,
+          },
+        },
+      });
+
+      return res.status(StatusCodes.OK).json({ message: "User removed" });
+    } catch (error) {
+      console.error(error);
+      if (error instanceof PrismaClientKnownRequestError) {
+        if (error.code === "P2025") {
+          return res
+            .status(StatusCodes.NOT_FOUND)
+            .json({ message: "User not in the group" });
+        }
+      }
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .json({ message: "Internal server error" });
+    }
+  },
+);
+
+// DELETE GROUP
 router.delete(
   "/:id",
   validate(idSchema, ValidationType.PARAMS),

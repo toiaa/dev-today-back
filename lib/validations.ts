@@ -181,3 +181,17 @@ export const joinGroupSchema = z.object({
     message: "Not a valid ID",
   }),
 });
+export const leaveGroupSchema = z.object({
+  userId: z.string({ required_error: "is required" }).length(36, {
+    message: "Not a valid ID",
+  }),
+});
+
+export const removeMemberSchema = z.object({
+  memberId: z.string({ required_error: "is required" }).length(36, {
+    message: "Not a valid ID",
+  }),
+  adminId: z.string({ required_error: "is required" }).length(36, {
+    message: "Not a valid ID",
+  }),
+});
