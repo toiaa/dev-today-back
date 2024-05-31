@@ -114,10 +114,17 @@ export const groupSchema = z.object({
   bio: z.string().min(10, { message: "must be at least 10 characters long." }),
   profileImage: z.string().optional(),
   coverImage: z.string().optional(),
-  userId: z.string({ required_error: "is required" }).length(36, {
+  creatorId: z.string({ required_error: "is required" }).length(36, {
     message: "Not a valid ID",
   }),
+  members: z.array(
+    z.object({
+      userId: z.string(),
+      isAdmin: z.boolean().optional(),
+    }),
+  ),
 });
+
 export const editGroupSchema = z.object({
   name: z
     .string()
@@ -145,11 +152,11 @@ export const updateGroupSchema = z.object({
   coverImage: z.string().optional(),
 });
 
-export const groupUserSchema = z.object({
-  userId: z.string({ required_error: "is required" }).length(36, {
+export const adminUserSchema = z.object({
+  creatorId: z.string({ required_error: "is required" }).length(36, {
     message: "Not a valid ID",
   }),
-  groupId: z.string({ required_error: "is required" }).length(36, {
+  memberId: z.string({ required_error: "is required" }).length(36, {
     message: "Not a valid ID",
   }),
 });
@@ -161,4 +168,20 @@ export const membersSchema = z.object({
       isAdmin: z.boolean().optional(),
     }),
   ),
+});
+
+export const groupMembersQuery = z.object({
+  page: z.string().optional(),
+});
+
+export const joinGroupSchema = z.object({
+  newMember: z.object({
+    memberId: z.string({ required_error: "is required" }).length(36, {
+      message: "Not a valid ID",
+    }),
+    isAdmin: z.boolean(),
+  }),
+  userId: z.string({ required_error: "is required" }).length(36, {
+    message: "Not a valid ID",
+  }),
 });

@@ -16,7 +16,7 @@ import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 
 const router = Router();
 
-//return all users with their profile from the database
+// get all users route
 router.get("/", async (req: Request, res: Response) => {
   try {
     const users = await prisma.user.findMany({
@@ -36,7 +36,27 @@ router.get("/", async (req: Request, res: Response) => {
   }
 });
 
-//return individual user with profile, following & followers count, whether user whose profile is being viewed is follwed by person loged in, and newest three posts
+// return all users with their profile from the database
+router.get("/", async (req: Request, res: Response) => {
+  try {
+    const users = await prisma.user.findMany({
+      omit: {
+        password: true,
+      },
+      include: {
+        profile: true,
+      },
+    });
+    return res.json(users);
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ message: "Internal server error" });
+  }
+});
+
+// return individual user with profile, following & followers count, whether user whose profile is being viewed is follwed by person loged in, and newest three posts
 router.get(
   "/:id",
   validate(idSchema, ValidationType.PARAMS),
@@ -102,7 +122,7 @@ router.get(
   },
 );
 
-//get all posts of a specific user, filter by postType, with pagination
+// get all posts of a specific user, filter by postType, with pagination
 router.get(
   "/:id/posts",
   validate(idSchema, ValidationType.PARAMS),
@@ -199,7 +219,7 @@ router.get(
   },
 );
 
-//follow a user
+// follow a user
 router.post(
   "/:id/follow",
   validate(idSchema, ValidationType.PARAMS),
@@ -248,7 +268,7 @@ router.post(
   },
 );
 
-//unfollow a user
+// unfollow a user
 router.post(
   "/:id/unfollow",
   validate(idSchema, ValidationType.PARAMS),
@@ -296,7 +316,7 @@ router.post(
   },
 );
 
-//delete a specific user
+// delete a specific user
 router.delete(
   "/:id",
   validate(idSchema, ValidationType.PARAMS),

@@ -116,20 +116,17 @@ model Group {
   posts        Post[] // one to many relation (the group can have many posts) - this references the post model
   createdAt    DateTime    @default(now())
   groupUser    GroupUser[]
-  active       Boolean     @default(true)
+  creatorId    String
 }
 
 model GroupUser {
-  id        String  @id @default(uuid())
-  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String
-  group     Group   @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  groupId   String
-  isAdmin   Boolean @default(false)
-  active    Boolean @default(true)
-  isCreator Boolean @default(false)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId  String
+  group   Group   @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId String
+  isAdmin Boolean @default(false)
 
-  @@unique([userId, groupId])
+  @@id([userId, groupId])
 }
 
 enum PostType {
