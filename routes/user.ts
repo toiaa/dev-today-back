@@ -192,9 +192,11 @@ router.get(
             },
           },
           select: {
+            id: true,
             name: true,
             coverImage: true,
             bio: true,
+            creator: true,
             groupUser: {
               take: 4,
               include: {
