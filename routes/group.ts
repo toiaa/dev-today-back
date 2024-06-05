@@ -18,8 +18,10 @@ import {
   joinGroupSchema,
   removeMemberSchema,
   leaveGroupSchema,
+  userPostsQuery,
 } from "../lib/validations";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
+import { PostType } from "@prisma/client";
 
 const router = Router();
 
@@ -94,7 +96,49 @@ router.get(
 );
 
 router.get(
-  "/:id/admins",
+  "/:id/content",
+  validate(idSchema, ValidationType.PARAMS),
+  validate(userPostsQuery, ValidationType.QUERY),
+  async (
+    req: TypedRequest<typeof idSchema, typeof userPostsQuery, ZodAny>,
+    res: Response,
+  ) => {
+    const id = req.params.id;
+    const type = req.query.postType;
+
+    const page = req.query.page ? parseInt(req.query.page) : 1;
+    const pageSize = 3;
+    try {
+      const skip = (page - 1) * pageSize;
+      const userPosts = await prisma.post.findMany({
+        where: {
+          groupId: id,
+          type: type as PostType,
+        },
+        include: {
+          tags: {
+            select: {
+              name: true,
+            },
+          },
+          likes: true,
+          comments: true,
+        },
+        skip: skip,
+        take: pageSize,
+      });
+
+      return res.status(StatusCodes.OK).json(userPosts);
+    } catch (error) {
+      res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .json({ message: "Internal server error" });
+    }
+  },
+);
+
+router.get(
+  "/:id/members",
   validate(idSchema, ValidationType.PARAMS),
   validate(groupMembersQuery, ValidationType.QUERY),
   async (
