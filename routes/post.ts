@@ -34,6 +34,11 @@ router.get(
               name: true,
             },
           },
+          author: {
+            include: {
+              profile: true,
+            },
+          },
         },
       });
       if (!post) {

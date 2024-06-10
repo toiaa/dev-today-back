@@ -22,6 +22,8 @@ import {
 } from "../lib/validations";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 import { PostType } from "@prisma/client";
+import { skip } from "node:test";
+import { type } from "os";
 
 const router = Router();
 
@@ -78,11 +80,48 @@ router.get(
         where: { id },
         include: {
           creator: true,
-          groupUser: true,
+          _count: {
+            select: { groupUser: true },
+          },
         },
       });
+      const members = await prisma.groupUser.findMany({
+        where: { groupId: id },
+        take: 10,
+        include: {
+          user: {
+            select: {
+              id: true,
+              image: true,
+              profile: true,
+              username: true,
+            },
+          },
+        },
+      });
+      /*  const meetUps = await prisma.post.findMany({ NEED HELP HERE :)
+        where: {
+          groupId: id,
+          type: PostType.MEETUP,
+        },
+        include: {
+          tags: {
+            select: {
+              name: true,
+            },
+          },
+        },
+
+        take: 3,
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+      console.log(meetUps, "meetups");
+ */
+
       if (group) {
-        return res.status(StatusCodes.OK).json(group);
+        return res.status(StatusCodes.OK).json({ group, members });
       }
       return res
         .status(StatusCodes.NOT_FOUND)
@@ -146,7 +185,7 @@ router.get(
     res: Response,
   ) => {
     const groupId = req.params.id;
-    const pageSize = 10;
+    const pageSize = Number(req.query.size) ?? 10; // get the page size from the query, default 10
     const page = req.query.page ? parseInt(req.query.page) : 1;
     try {
       const skip = (page - 1) * pageSize;
@@ -164,9 +203,10 @@ router.get(
         skip,
         take: pageSize,
       });
-
       if (members) {
-        return res.status(StatusCodes.OK).json(members);
+        return res.status(StatusCodes.OK).json({
+          members,
+        });
       }
       return res
         .status(StatusCodes.NOT_FOUND)
