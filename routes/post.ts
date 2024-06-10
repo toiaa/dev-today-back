@@ -29,7 +29,7 @@ router.get(
           id,
         },
         include: {
-          tags: {
+          interestTechTags: {
             select: {
               name: true,
             },
@@ -62,21 +62,22 @@ router.post(
   validate(postSchema, ValidationType.BODY),
   async (req: TypedRequestBody<typeof postSchema>, res: Response) => {
     const {
-      title,
-      content,
-      type,
-      meetDate,
-      location,
-      audio,
-      image,
       authorId,
+      title,
+      createType,
       groupId,
-      tags,
+      coverImage,
+      audioFile,
+      audioTitle,
+      meetupLocation,
+      meetupDate,
+      tinyContent,
+      interestTechTags,
     } = req.body;
 
     try {
       const tagIds = await Promise.all(
-        tags.map(async (tag) => {
+        interestTechTags.map(async (tag) => {
           const existingTag = await prisma.tag.findUnique({
             where: {
               name: tag,
@@ -106,19 +107,20 @@ router.post(
         data: {
           authorId,
           title,
-          type,
-          meetDate,
-          location,
-          content,
-          audio,
-          image,
+          createType,
           groupId,
-          tags: {
+          coverImage,
+          audioFile,
+          audioTitle,
+          meetupLocation,
+          meetupDate,
+          tinyContent,
+          interestTechTags: {
             connect: tagIds.map((id) => ({ id })),
           },
         },
         include: {
-          tags: {
+          interestTechTags: {
             select: {
               name: true,
             },
@@ -145,7 +147,7 @@ router.patch(
     res: Response,
   ) => {
     const id = req.params.id;
-    const { title, content } = req.body;
+    const { title, tinyContent } = req.body;
     try {
       const posts = await prisma.post.update({
         where: {
@@ -153,7 +155,7 @@ router.patch(
         },
         data: {
           title,
-          content,
+          tinyContent,
         },
       });
       return res.status(StatusCodes.OK).json(posts);

@@ -28,23 +28,30 @@ export const generalPostSchema = z.object({
   authorId: z.string({ required_error: "is required" }).length(36, {
     message: "Not a valid ID",
   }),
-  title: z.string().min(4, { message: "must be at least 4 characters long." }),
-  type: z.nativeEnum(PostType),
-  content: z
+  title: z
     .string()
-    .min(4, { message: "must be at least 4 characters long." }),
-  meetDate: z.date().optional(),
-  location: z.string().optional(),
-  audio: z.string().optional(),
-  image: z.string().optional(),
-  groupId: z.string().min(4),
-  tags: z.string().array().nonempty({ message: "must add at least one" }),
+    .min(4, { message: "Title must be between 4 and 20 characters" })
+    .max(120),
+  createType: z.nativeEnum(PostType),
+  groupId: z.string({ required_error: "is required" }).length(36, {
+    message: "Not a valid ID",
+  }),
+  coverImage: z.string().optional(),
+  audioFile: z.string().optional(),
+  audioTitle: z.string().optional(),
+  meetupLocation: z.string().optional(),
+  meetupDate: z.coerce.date().optional(),
+  tinyContent: z.string(),
+  interestTechTags: z
+    .array(z.string())
+    .nonempty({ message: "must add at least one" })
+    .max(7, { message: "You can only add 7 tags" }),
 });
 
 export const postSchema = generalPostSchema;
 
 export const updatePostSchema = generalPostSchema
-  .pick({ title: true, content: true })
+  .pick({ title: true, tinyContent: true })
   .required();
 
 export const userPostsQuery = z.object({

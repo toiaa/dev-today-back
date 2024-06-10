@@ -62,23 +62,24 @@ model Follow {
 }
 
 model Post {
-  id        String    @id @default(uuid())
-  author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  authorId  String
-  title     String
-  type      PostType  @default(STANDARD)
-  createdAt DateTime  @default(now())
-  meetDate  DateTime?
-  location  String?
-  content   String?
-  audio     String?
-  image     String?
-  comments  Comment[]
-  tags      Tag[]
-  likes     Like[]
-  views     Int       @default(0)
-  group     Group?    @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  groupId   String?
+  id               String    @id @default(uuid())
+  author           User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId         String
+  title            String
+  createType       PostType  @default(STANDARD)
+  group            Group?    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId          String?
+  coverImage       String?
+  audioFile        String?
+  audioTitle       String?
+  meetupLocation   String?
+  meetupDate       DateTime?
+  tinyContent      String?
+  createdAt        DateTime  @default(now())
+  comments         Comment[]
+  interestTechTags Tag[]
+  likes            Like[]
+  views            Int       @default(0)
 }
 
 model Like {
