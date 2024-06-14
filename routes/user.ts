@@ -16,7 +16,7 @@ import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 
 const router = Router();
 
-//return all users with their profile from the database
+// get all users route
 router.get("/", async (req: Request, res: Response) => {
   try {
     const users = await prisma.user.findMany({
@@ -36,7 +36,27 @@ router.get("/", async (req: Request, res: Response) => {
   }
 });
 
-//return individual user with profile, following & followers count, whether user whose profile is being viewed is follwed by person loged in, and newest three posts
+// return all users with their profile from the database
+router.get("/", async (req: Request, res: Response) => {
+  try {
+    const users = await prisma.user.findMany({
+      omit: {
+        password: true,
+      },
+      include: {
+        profile: true,
+      },
+    });
+    return res.json(users);
+  } catch (error) {
+    console.error(error);
+    return res
+      .status(StatusCodes.INTERNAL_SERVER_ERROR)
+      .json({ message: "Internal server error" });
+  }
+});
+
+// return individual user with profile, following & followers count, whether user whose profile is being viewed is follwed by person loged in, and newest three posts
 router.get(
   "/:id",
   validate(idSchema, ValidationType.PARAMS),
@@ -102,7 +122,7 @@ router.get(
   },
 );
 
-//get all posts of a specific user, filter by postType, with pagination
+// get all posts of a specific user, filter by postType, with pagination
 router.get(
   "/:id/posts",
   validate(idSchema, ValidationType.PARAMS),
@@ -121,10 +141,10 @@ router.get(
       const userPosts = await prisma.post.findMany({
         where: {
           authorId: id,
-          type: type as PostType,
+          createType: type as PostType,
         },
         include: {
-          tags: {
+          interestTechTags: {
             select: {
               name: true,
             },
@@ -155,42 +175,67 @@ router.get(
     res: Response,
   ) => {
     const id = req.params.id;
-
+    const search = req.query.search; // keep working here to add search functionality
+    const pageSize = req.query.size ? Number(req.query.size) : 5;
     const page = req.query.page ? parseInt(req.query.page) : 1;
-    const pageSize = 5; // Number of posts per page
+
     try {
       const skip = (page - 1) * pageSize;
-      const userGroups = await prisma.group.findMany({
-        where: {
-          groupUser: {
-            some: {
-              userId: id,
-            },
-          },
-        },
-        select: {
-          name: true,
-          coverImage: true,
-          bio: true,
-          groupUser: {
-            take: 4,
-            include: {
-              user: {
-                select: {
-                  image: true,
-                },
+
+      if (!search) {
+        const userGroups = await prisma.group.findMany({
+          where: {
+            groupUser: {
+              some: {
+                userId: id,
               },
             },
           },
-          _count: {
-            select: { groupUser: true },
+          select: {
+            id: true,
+            name: true,
+            coverImage: true,
+            bio: true,
+            creator: true,
+            groupUser: {
+              take: 4,
+              include: {
+                user: {
+                  select: {
+                    image: true,
+                  },
+                },
+              },
+            },
+            _count: {
+              select: { groupUser: true },
+            },
           },
-        },
-        skip,
-        take: pageSize,
-      });
+          skip,
+          take: pageSize,
+        });
+        return res.status(StatusCodes.OK).json(userGroups);
+      }
 
-      return res.status(StatusCodes.OK).json(userGroups);
+      if (search) {
+        const userGroups = await prisma.group.findMany({
+          take: pageSize,
+          where: {
+            OR: [
+              {
+                name: {
+                  contains: search,
+                },
+              },
+              { name: { contains: search } },
+            ],
+          },
+          orderBy: {
+            id: "desc",
+          },
+        });
+        return res.status(StatusCodes.OK).json(userGroups);
+      }
     } catch (error) {
       res
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
@@ -199,7 +244,7 @@ router.get(
   },
 );
 
-//follow a user
+// follow a user
 router.post(
   "/:id/follow",
   validate(idSchema, ValidationType.PARAMS),
@@ -248,7 +293,7 @@ router.post(
   },
 );
 
-//unfollow a user
+// unfollow a user
 router.post(
   "/:id/unfollow",
   validate(idSchema, ValidationType.PARAMS),
@@ -296,7 +341,7 @@ router.post(
   },
 );
 
-//delete a specific user
+// delete a specific user
 router.delete(
   "/:id",
   validate(idSchema, ValidationType.PARAMS),

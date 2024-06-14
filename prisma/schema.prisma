@@ -5,7 +5,7 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
   previewFeatures = ["omitApi"]
 }
 
@@ -15,19 +15,20 @@ datasource db {
 }
 
 model User {
-  id        String      @id @unique @default(uuid())
-  createdAt DateTime    @default(now())
-  email     String      @unique
-  password  String
-  username  String      @unique
-  image     String?
-  profile    Profile?
-  posts     Post[] // one to many relation (the user can have many posts) - this references the post model
-  comments  Comment[]
-  likes     Like[]
-  groupUser GroupUser[]
-  following Follow[]    @relation("follower")
-  followers Follow[]    @relation("following")
+  id            String      @id @unique @default(uuid())
+  createdAt     DateTime    @default(now())
+  email         String      @unique
+  password      String
+  username      String      @unique
+  image         String?
+  profile       Profile?
+  posts         Post[]
+  comments      Comment[]
+  likes         Like[]
+  groupUser     GroupUser[]
+  following     Follow[]    @relation("follower")
+  followers     Follow[]    @relation("following")
+  createdGroups Group[]
 
   @@index([email])
 }
@@ -45,8 +46,8 @@ model Profile {
   githubHandle        String?
   linkedinLink        String?
   linkedinHandle      String?
-  xProfileLink         String?
-  xProfileHandle       String?
+  xProfileLink        String?
+  xProfileHandle      String?
   instagramLink       String?
   instagramHandle     String?
 }
@@ -61,35 +62,34 @@ model Follow {
 }
 
 model Post {
-  id        String    @id @default(uuid())
-  author    User      @relation(fields: [authorId], references: [id], onDelete: Cascade) // one to many (the post can have only one user or author) - this references the user model
-  authorId  String
-  title     String
-  type      PostType  @default(STANDARD)
-  createdAt DateTime  @default(now())
-  meetDate  DateTime?
-  location  String?
-  content   String?
-  audio     String?
-  image     String?
-  comments  Comment[] // one to many relation (the post can have many comments) - this references the comment model
-  tags      Tag[]
-  likes     Like[]
-  views     Int       @default(0)
-  group     Group?    @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  groupId   String?
+  id               String    @id @default(uuid())
+  author           User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId         String
+  title            String
+  createType       PostType  @default(STANDARD)
+  group            Group?    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId          String?
+  coverImage       String?
+  audioFile        String?
+  audioTitle       String?
+  meetupLocation   String?
+  meetupDate       DateTime?
+  tinyContent      String?
+  createdAt        DateTime  @default(now())
+  comments         Comment[]
+  interestTechTags Tag[]
+  likes            Like[]
+  views            Int       @default(0)
 }
 
 model Like {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId String
-  post     Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
-  postId   String
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId String
 
   @@id([userId, postId])
 }
-
-//intermediary table to link posts to tags
 
 model Tag {
   id   String @id @default(uuid())
@@ -103,31 +103,33 @@ model Comment {
   createdAt DateTime @default(now())
   author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
   authorId  String
-  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade) // one to many relation (the comment can have only one post) - this references the post model
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
   postId    String
 }
 
 model Group {
   id           String      @id @default(uuid())
   name         String
-  profileImage  String
+  profileImage String
   coverImage   String?
   bio          String?
-  posts        Post[] // one to many relation (the group can have many posts) - this references the post model
+  posts        Post[]
   createdAt    DateTime    @default(now())
   groupUser    GroupUser[]
-  active       Boolean     @default(true)
+  creatorId    String
+  creator      User        @relation(fields: [creatorId], references: [id])
+
+  @@unique([name, creatorId])
 }
 
 model GroupUser {
-  id        String  @id @default(uuid())
-  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String
-  group     Group   @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  groupId   String
-  isAdmin   Boolean @default(false)
-  active    Boolean @default(false)
-  isCreator Boolean @default(false)
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId  String
+  group   Group   @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId String
+  isAdmin Boolean @default(false)
+
+  @@id([userId, groupId])
 }
 
 enum PostType {
