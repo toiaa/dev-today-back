@@ -152,10 +152,10 @@ router.get(
       const userPosts = await prisma.post.findMany({
         where: {
           groupId: id,
-          type: type as PostType,
+          createType: type as PostType,
         },
         include: {
-          tags: {
+          interestTechTags: {
             select: {
               name: true,
             },
