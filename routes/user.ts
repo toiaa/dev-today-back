@@ -149,6 +149,7 @@ router.get(
               name: true,
             },
           },
+          author: true,
           likes: true,
           comments: true,
         },
