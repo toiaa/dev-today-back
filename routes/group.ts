@@ -18,8 +18,12 @@ import {
   joinGroupSchema,
   removeMemberSchema,
   leaveGroupSchema,
+  userPostsQuery,
 } from "../lib/validations";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
+import { PostType } from "@prisma/client";
+import { skip } from "node:test";
+import { type } from "os";
 
 const router = Router();
 
@@ -76,11 +80,48 @@ router.get(
         where: { id },
         include: {
           creator: true,
-          groupUser: true,
+          _count: {
+            select: { groupUser: true },
+          },
         },
       });
+      const members = await prisma.groupUser.findMany({
+        where: { groupId: id },
+        take: 10,
+        include: {
+          user: {
+            select: {
+              id: true,
+              image: true,
+              profile: true,
+              username: true,
+            },
+          },
+        },
+      });
+      /*  const meetUps = await prisma.post.findMany({ NEED HELP HERE :)
+        where: {
+          groupId: id,
+          type: PostType.MEETUP,
+        },
+        include: {
+          tags: {
+            select: {
+              name: true,
+            },
+          },
+        },
+
+        take: 3,
+        orderBy: {
+          createdAt: "desc",
+        },
+      });
+      console.log(meetUps, "meetups");
+ */
+
       if (group) {
-        return res.status(StatusCodes.OK).json(group);
+        return res.status(StatusCodes.OK).json({ group, members });
       }
       return res
         .status(StatusCodes.NOT_FOUND)
@@ -94,7 +135,49 @@ router.get(
 );
 
 router.get(
-  "/:id/admins",
+  "/:id/content",
+  validate(idSchema, ValidationType.PARAMS),
+  validate(userPostsQuery, ValidationType.QUERY),
+  async (
+    req: TypedRequest<typeof idSchema, typeof userPostsQuery, ZodAny>,
+    res: Response,
+  ) => {
+    const id = req.params.id;
+    const type = req.query.postType;
+
+    const page = req.query.page ? parseInt(req.query.page) : 1;
+    const pageSize = 3;
+    try {
+      const skip = (page - 1) * pageSize;
+      const userPosts = await prisma.post.findMany({
+        where: {
+          groupId: id,
+          createType: type as PostType,
+        },
+        include: {
+          interestTechTags: {
+            select: {
+              name: true,
+            },
+          },
+          likes: true,
+          comments: true,
+        },
+        skip: skip,
+        take: pageSize,
+      });
+
+      return res.status(StatusCodes.OK).json(userPosts);
+    } catch (error) {
+      res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .json({ message: "Internal server error" });
+    }
+  },
+);
+
+router.get(
+  "/:id/members",
   validate(idSchema, ValidationType.PARAMS),
   validate(groupMembersQuery, ValidationType.QUERY),
   async (
@@ -102,8 +185,11 @@ router.get(
     res: Response,
   ) => {
     const groupId = req.params.id;
-    const pageSize = 10;
+    const pageSize = Number(req.query.size) ?? 10; // get the page size from the query, default 10
     const page = req.query.page ? parseInt(req.query.page) : 1;
+    const type = req.query.type ? req.query.type : "all";
+    // I need to add the user type to the groupUser search like if type admin or not
+
     try {
       const skip = (page - 1) * pageSize;
       const members = await prisma.groupUser.findMany({
@@ -120,9 +206,10 @@ router.get(
         skip,
         take: pageSize,
       });
-
       if (members) {
-        return res.status(StatusCodes.OK).json(members);
+        return res.status(StatusCodes.OK).json({
+          members,
+        });
       }
       return res
         .status(StatusCodes.NOT_FOUND)
@@ -136,7 +223,6 @@ router.get(
   },
 );
 
-// ADD ADMINS, GROUP MEMBERS will become admins
 router.patch(
   "/:id/add-admin",
   validate(idSchema, ValidationType.PARAMS),

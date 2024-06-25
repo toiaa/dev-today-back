@@ -17,7 +17,7 @@ import { ZodAny } from "zod";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 const router = Router();
 
-//get a specific post with the post's id.
+// get a specific post with the post's id.
 router.get(
   "/:id",
   validate(idSchema, ValidationType.PARAMS),
@@ -32,6 +32,11 @@ router.get(
           interestTechTags: {
             select: {
               name: true,
+            },
+          },
+          author: {
+            include: {
+              profile: true,
             },
           },
         },
@@ -51,7 +56,7 @@ router.get(
   },
 );
 
-//create a post
+// create a post
 router.post(
   "/",
   validate(postSchema, ValidationType.BODY),
@@ -223,7 +228,7 @@ router.post(
   },
 );
 
-//unlike a post of another user
+// unlike a post of another user
 router.post(
   "/:id/unlike",
   validate(idSchema, ValidationType.PARAMS),
@@ -260,7 +265,7 @@ router.post(
   },
 );
 
-//delete a single post
+// delete a single post
 router.delete(
   "/:id",
   validate(idSchema, ValidationType.PARAMS),

@@ -181,6 +181,8 @@ export const membersSchema = z.object({
 
 export const groupMembersQuery = z.object({
   page: z.string().optional(),
+  size: z.string().optional(),
+  type: z.string().optional(),
 });
 
 export const joinGroupSchema = z.object({
