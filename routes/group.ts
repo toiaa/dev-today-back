@@ -187,6 +187,9 @@ router.get(
     const groupId = req.params.id;
     const pageSize = Number(req.query.size) ?? 10; // get the page size from the query, default 10
     const page = req.query.page ? parseInt(req.query.page) : 1;
+    const type = req.query.type ? req.query.type : "all";
+    // I need to add the user type to the groupUser search like if type admin or not
+
     try {
       const skip = (page - 1) * pageSize;
       const members = await prisma.groupUser.findMany({
@@ -220,7 +223,6 @@ router.get(
   },
 );
 
-// ADD ADMINS, GROUP MEMBERS will become admins
 router.patch(
   "/:id/add-admin",
   validate(idSchema, ValidationType.PARAMS),
