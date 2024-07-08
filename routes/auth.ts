@@ -28,6 +28,8 @@ router.post(
           username,
           email: email.toLowerCase(),
           password: hashedPassword,
+          image:
+            "https://img.freepik.com/free-vector/isolated-young-handsome-man-set-different-poses-white-background-illustration_632498-657.jpg",
           profile: {
             create: {
               onBoardingCompleted: false,

@@ -137,7 +137,7 @@ router.post(
   },
 );
 
-//edit a post with its id
+// edit a post with its id
 router.patch(
   "/:id",
   validate(idSchema, ValidationType.PARAMS),

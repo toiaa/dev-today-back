@@ -16,38 +16,26 @@ import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 
 const router = Router();
 
-// get all users route
-router.get("/", async (req: Request, res: Response) => {
-  try {
-    const users = await prisma.user.findMany({
-      omit: {
-        password: true,
-      },
-      include: {
-        profile: true,
-      },
-    });
-    return res.json(users);
-  } catch (error) {
-    console.error(error);
-    return res
-      .status(StatusCodes.INTERNAL_SERVER_ERROR)
-      .json({ message: "Internal server error" });
-  }
-});
-
 // return all users with their profile from the database
 router.get("/", async (req: Request, res: Response) => {
   try {
+    const search = req.query.search;
     const users = await prisma.user.findMany({
+      where: {
+        username: {
+          startsWith: search as string,
+          mode: "insensitive",
+        },
+      },
       omit: {
         password: true,
       },
       include: {
         profile: true,
       },
+      take: search ? 3 : 0,
     });
-    return res.json(users);
+    return res.status(StatusCodes.OK).json(users);
   } catch (error) {
     console.error(error);
     return res
@@ -80,9 +68,9 @@ router.get(
           profile: true,
           posts: {
             orderBy: {
-              createdAt: "desc", // Order posts by createdAt in descending order
+              createdAt: "desc",
             },
-            take: 3, // Take only the latest three posts
+            take: 3,
           },
           _count: {
             select: { followers: true, following: true },
@@ -176,7 +164,7 @@ router.get(
     res: Response,
   ) => {
     const id = req.params.id;
-    const search = req.query.search; // keep working here to add search functionality
+    const search = req.query.search;
     const pageSize = req.query.size ? Number(req.query.size) : 5;
     const page = req.query.page ? parseInt(req.query.page) : 1;
 
