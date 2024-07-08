@@ -22,17 +22,39 @@ import {
 } from "../lib/validations";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 import { PostType } from "@prisma/client";
-import { skip } from "node:test";
-import { type } from "os";
 
 const router = Router();
-
+// create group
 router.post(
-  "/create",
+  "/",
   validate(groupSchema, ValidationType.BODY),
   async (req: TypedRequestBody<typeof groupSchema>, res: Response) => {
-    const { name, bio, profileImage, coverImage, creatorId, members } =
+    const { name, bio, profileImage, coverImage, creatorId, members, admins } =
       req.body;
+
+    // add a filter to remove duplicates
+    // send the members with the user id and the is admin
+    // DO NOT add the creator with the members, that will be added automatically
+
+    console.log(
+      name,
+      bio,
+      profileImage,
+      coverImage,
+      creatorId,
+      members,
+      admins,
+    );
+
+    const membersFiltered = members.filter(
+      (member) => member.userId !== creatorId,
+    );
+
+    const adminsFiltered = admins.filter((admin) => admin.userId !== creatorId);
+    const userAdminIDs = new Set(admins.map((admin) => admin.userId));
+    const membersNotAdmin = membersFiltered.filter(
+      (user) => !userAdminIDs.has(user.userId),
+    );
     try {
       const group = await prisma.group.create({
         data: {
@@ -47,12 +69,13 @@ router.post(
                 userId: creatorId,
                 isAdmin: true,
               },
-              ...members,
+              ...membersNotAdmin,
+              ...adminsFiltered,
             ],
           },
         },
       });
-
+      console.log(group, "group created");
       return res.status(StatusCodes.OK).json(group);
     } catch (error) {
       if (error instanceof PrismaClientKnownRequestError) {
@@ -99,27 +122,23 @@ router.get(
           },
         },
       });
-      /*  const meetUps = await prisma.post.findMany({ NEED HELP HERE :)
+      const meetUps = await prisma.post.findMany({
         where: {
           groupId: id,
-          type: PostType.MEETUP,
+          createType: PostType.MEETUP,
         },
         include: {
-          tags: {
+          interestTechTags: {
             select: {
               name: true,
             },
           },
         },
-
         take: 3,
         orderBy: {
           createdAt: "desc",
         },
       });
-      console.log(meetUps, "meetups");
- */
-
       if (group) {
         return res.status(StatusCodes.OK).json({ group, members });
       }
@@ -185,15 +204,16 @@ router.get(
     res: Response,
   ) => {
     const groupId = req.params.id;
-    const pageSize = Number(req.query.size) ?? 10; // get the page size from the query, default 10
+    const pageSize = req.query.size ? parseInt(req.query.size) : 1; // get the page size from the query, default 10
     const page = req.query.page ? parseInt(req.query.page) : 1;
-    const type = req.query.type ? req.query.type : "all";
+    const isAdmin = req.query.type && req.query.type === "admin" ? true : false;
     // I need to add the user type to the groupUser search like if type admin or not
-
+    console.log(pageSize, "page size");
+    console.log(page, "page ");
     try {
       const skip = (page - 1) * pageSize;
       const members = await prisma.groupUser.findMany({
-        where: { groupId },
+        where: { groupId, isAdmin },
         include: {
           user: {
             select: {
@@ -367,7 +387,6 @@ router.post(
           groupId: groupId,
         },
       });
-      console.log(newMember);
       return res.status(StatusCodes.OK).json({ message: "You joined group" });
     } catch (error) {
       console.log(error);

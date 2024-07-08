@@ -100,6 +100,7 @@ export const profileSchema = z.object({
       message: "maximum of 130 characters",
     })
     .optional(),
+  profileImage: z.string().optional(),
   githubLink: z.string().optional(),
   githubHandle: z.string().optional(),
   linkedinLink: z.string().optional(),
@@ -125,6 +126,12 @@ export const groupSchema = z.object({
     message: "Not a valid ID",
   }),
   members: z.array(
+    z.object({
+      userId: z.string(),
+      isAdmin: z.boolean().optional(),
+    }),
+  ),
+  admins: z.array(
     z.object({
       userId: z.string(),
       isAdmin: z.boolean().optional(),

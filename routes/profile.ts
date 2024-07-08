@@ -75,6 +75,7 @@ router.patch(
       const {
         name,
         bio,
+        profileImage,
         githubLink,
         githubHandle,
         linkedinLink,
@@ -101,6 +102,15 @@ router.patch(
           instagramHandle,
         },
       });
+      await prisma.user.update({
+        where: {
+          id,
+        },
+        data: {
+          image: profileImage,
+        },
+      });
+
       return res.status(StatusCodes.OK).json({ message: "Profile updated" });
     } catch (error) {
       console.error(error);

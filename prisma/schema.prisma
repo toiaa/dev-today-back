@@ -41,6 +41,7 @@ model Profile {
   journey             String?
   ambitions           String[]
   tech                String[]
+  profileImage        String?
   bio                 String?
   githubLink          String?
   githubHandle        String?
